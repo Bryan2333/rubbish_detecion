@@ -18,6 +18,8 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
   int _selectedDayIndex = 0;
   int _selectedTimeSlotIndex = 0;
 
+  late FixedExtentScrollController _timeSlotScrollController;
+
   final timeSlots = [
     "09:00~11:00",
     "11:00~13:00",
@@ -33,6 +35,14 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
     super.initState();
     _initializeAvailableDays();
     _parseInitialDateTime();
+    _timeSlotScrollController =
+        FixedExtentScrollController(initialItem: _selectedTimeSlotIndex);
+  }
+
+  @override
+  void dispose() {
+    _timeSlotScrollController.dispose();
+    super.dispose();
   }
 
   void _initializeAvailableDays() {
@@ -52,8 +62,8 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
       final match = regex.firstMatch(slot);
       final slotStartHour = int.parse(match!.group(1)!);
       final slotEndHour = int.parse(match.group(3)!);
-      return (slotStartHour <= now.hour && now.hour <= slotEndHour) ||
-          now.hour < slotStartHour;
+      return (slotStartHour < now.hour && now.hour < slotEndHour) ||
+          now.hour <= slotStartHour;
     }).toList();
   }
 
@@ -80,8 +90,6 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
       return;
     }
 
-    // _selectedDayIndex = _availableDays.indexWhere((date) =>
-    //     date.month == initialDate.month && date.day == initialDate.day);
     _selectedDayIndex = _availableDays.indexOf(initialDate);
 
     final availableTimeSlots =
@@ -104,72 +112,83 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
       padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 10.w),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("取消"),
-              ),
-              Text(
-                "请选择时间",
-                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-              ),
-              TextButton(
-                onPressed: () {
-                  final selectedDate = _availableDays[_selectedDayIndex];
-                  final selectedSlot =
-                      availableTimeSlots[_selectedTimeSlotIndex];
-
-                  final formattedDate =
-                      DateFormat("MM月dd日", "zh_CN").format(selectedDate);
-                  final selectedDateTime = "$formattedDate $selectedSlot";
-
-                  widget.onTimeSelected?.call(selectedDateTime);
-                  Navigator.pop(context);
-                },
-                child: const Text("确定"),
-              ),
-            ],
-          ),
+          _buildHeader(availableTimeSlots),
           const Divider(),
           Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // 日期选择
-                Expanded(
-                  flex: 2,
-                  child: buildListWheelScrollView(
-                    items: _availableDays
-                        .map((date) =>
-                            DateFormat('MM月dd日(EEE)', 'zh_CN').format(date))
-                        .toList(),
-                    selectedIndex: _selectedDayIndex,
-                    onChanged: (index) {
-                      setState(() {
-                        _selectedDayIndex = index;
-                        _selectedTimeSlotIndex = 0;
-                      });
-                    },
-                  ),
-                ),
+                _buildDatePicker(),
                 SizedBox(width: 10.w),
                 // 时间段选择
-                Expanded(
-                  flex: 2,
-                  child: buildListWheelScrollView(
-                    items: availableTimeSlots,
-                    selectedIndex: _selectedTimeSlotIndex,
-                    onChanged: (index) {
-                      setState(() => _selectedTimeSlotIndex = index);
-                    },
-                  ),
-                ),
+                _buildTimeSlotPicker(availableTimeSlots),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(List<String> availableTimeSlots) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("取消"),
+        ),
+        Text(
+          "请选择时间",
+          style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+        ),
+        TextButton(
+          onPressed: () {
+            final selectedDate = _availableDays[_selectedDayIndex];
+            final selectedSlot = availableTimeSlots[_selectedTimeSlotIndex];
+
+            final formattedDate =
+                DateFormat("MM月dd日", "zh_CN").format(selectedDate);
+            final selectedDateTime = "$formattedDate $selectedSlot";
+
+            widget.onTimeSelected?.call(selectedDateTime);
+            Navigator.pop(context);
+          },
+          child: const Text("确定"),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDatePicker() {
+    return Expanded(
+      child: buildListWheelScrollView(
+        items: _availableDays
+            .map((date) => DateFormat('MM月dd日(EEE)', 'zh_CN').format(date))
+            .toList(),
+        selectedIndex: _selectedDayIndex,
+        onChanged: (index) {
+          setState(() {
+            _selectedDayIndex = index;
+            _selectedTimeSlotIndex = 0;
+            _timeSlotScrollController.jumpToItem(0);
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildTimeSlotPicker(List<String> availableTimeSlots) {
+    return Expanded(
+      child: buildListWheelScrollView(
+        items: availableTimeSlots,
+        selectedIndex: _selectedTimeSlotIndex,
+        onChanged: (index) {
+          setState(() {
+            _selectedTimeSlotIndex = index;
+          });
+        },
       ),
     );
   }
@@ -179,8 +198,9 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
     required int selectedIndex,
     required ValueChanged<int> onChanged,
   }) {
-    final scrollController =
-        FixedExtentScrollController(initialItem: selectedIndex);
+    final scrollController = items == timeSlots || items == _getTodaySlot()
+        ? _timeSlotScrollController
+        : FixedExtentScrollController(initialItem: selectedIndex);
 
     return ListWheelScrollView.useDelegate(
       controller: scrollController,
