@@ -18,26 +18,26 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
 
   // 获取垃圾类型名称
   String get _typeName => switch (widget.type) {
-        0 => "可回收物",
-        1 => "有害垃圾",
-        2 => "厨余垃圾",
-        3 => "其他垃圾",
+        0 => "干垃圾",
+        1 => "湿垃圾",
+        2 => "可回收物",
+        3 => "有害垃圾啊",
         _ => "未知类型"
       };
 
   // 获取主题色
   Color get _themeColor => switch (widget.type) {
-        0 => const Color(0xFF1ADFCC),
-        1 => const Color(0xFFFF7396),
-        2 => const Color(0xFF4DB8FF),
-        3 => const Color(0xFFFFA721),
+        0 => const Color(0xFFFFA721),
+        1 => const Color(0xFF4DB8FF),
+        2 => const Color(0xFF1ADFCC),
+        3 => const Color(0xFFFF7396),
         _ => Colors.grey
       };
 
   @override
   void initState() {
     super.initState();
-    _rubbishTypeDescViewModel.getDesc();
+    _rubbishTypeDescViewModel.getDesc(widget.type);
   }
 
   @override
@@ -113,10 +113,10 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
 
   Widget _buildDescCard(String name, String desc) {
     final icon = switch (widget.type) {
-      0 => "assets/images/recyclable_waste_3.png",
-      1 => "assets/images/harmful_waste_3.png",
-      2 => "assets/images/food_waste_3.png",
-      3 => "assets/images/solid_waste_3.png",
+      0 => "assets/images/solid_waste_3.png",
+      1 => "assets/images/food_waste_3.png",
+      2 => "assets/images/recyclable_waste_3.png",
+      3 => "assets/images/harmful_waste_3.png",
       _ => ""
     };
 

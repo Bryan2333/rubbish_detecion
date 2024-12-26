@@ -1,20 +1,20 @@
 class RubbishTypeDescModel {
-  int? code;
   String? msg;
+  String? code;
   RubbishTypeDesc? data;
 
-  RubbishTypeDescModel({this.code, this.msg, this.data});
+  RubbishTypeDescModel({this.msg, this.code, this.data});
 
   RubbishTypeDescModel.fromJson(Map<String, dynamic> json) {
-    code = json['code'];
     msg = json['msg'];
+    code = json['code'];
     data = json['data'] != null ? RubbishTypeDesc.fromJson(json['data']) : null;
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-    data['code'] = code;
     data['msg'] = msg;
+    data['code'] = code;
     if (this.data != null) {
       data['data'] = this.data!.toJson();
     }
@@ -23,6 +23,8 @@ class RubbishTypeDescModel {
 }
 
 class RubbishTypeDesc {
+  int? id;
+  int? type;
   String? name;
   String? desc;
   List<String>? disposalAdvice;
@@ -30,27 +32,33 @@ class RubbishTypeDesc {
   List<String>? commonThings;
 
   RubbishTypeDesc(
-      {this.name,
+      {this.id,
+      this.type,
+      this.name,
       this.desc,
       this.disposalAdvice,
       this.handleMethods,
       this.commonThings});
 
   RubbishTypeDesc.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    type = json['type'];
     name = json['name'];
     desc = json['desc'];
-    disposalAdvice = json['disposal_advice'].cast<String>();
-    handleMethods = json['handle_methods'].cast<String>();
-    commonThings = json['common_things'].cast<String>();
+    disposalAdvice = json['disposalAdvice'].cast<String>();
+    handleMethods = json['handleMethods'].cast<String>();
+    commonThings = json['commonThings'].cast<String>();
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['type'] = type;
     data['name'] = name;
     data['desc'] = desc;
-    data['disposal_advice'] = disposalAdvice;
-    data['handle_methods'] = handleMethods;
-    data['common_things'] = commonThings;
+    data['disposalAdvice'] = disposalAdvice;
+    data['handleMethods'] = handleMethods;
+    data['commonThings'] = commonThings;
     return data;
   }
 }

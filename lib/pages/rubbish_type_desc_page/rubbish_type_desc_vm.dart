@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:rubbish_detection/repository/data/rubbish_type_desc.dart';
@@ -7,11 +5,12 @@ import 'package:rubbish_detection/repository/data/rubbish_type_desc.dart';
 class RubbishTypeDescViewModel with ChangeNotifier {
   RubbishTypeDesc? desc;
 
-  Future<void> getDesc() async {
-    final dio = Dio(BaseOptions(baseUrl: "https://pastebin.com"));
-    final res = await dio.get("/raw/iaThjkkC");
+  Future<void> getDesc(int type) async {
+    final dio = Dio(BaseOptions(baseUrl: "http://10.133.73.147:1760"));
 
-    final data = RubbishTypeDescModel.fromJson(json.decode(res.data));
+    final res = await dio.get("/api/rubbish-type/$type");
+
+    final data = RubbishTypeDescModel.fromJson(res.data);
 
     desc = data.data;
 
