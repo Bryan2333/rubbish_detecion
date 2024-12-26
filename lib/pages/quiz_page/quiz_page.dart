@@ -128,7 +128,7 @@ class _QuizPageState extends State<QuizPage>
         child: Column(
           children: [
             // 顶部信息区域
-            Padding(
+            Container(
               padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
               child: Row(
                 children: [
@@ -334,7 +334,7 @@ class _QuizPageState extends State<QuizPage>
                   }
                 : null,
             borderRadius: BorderRadius.circular(16.r),
-            child: Padding(
+            child: Container(
               padding: EdgeInsets.all(16.r),
               child: Row(
                 children: [

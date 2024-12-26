@@ -56,10 +56,8 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
         title: Text(
           "订单状态",
           style: TextStyle(
@@ -267,7 +265,7 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
   }
 
   Widget _buildInfoRow(String label, String value) {
-    return Padding(
+    return Container(
       padding: EdgeInsets.only(bottom: 8.h),
       child: Row(
         children: [

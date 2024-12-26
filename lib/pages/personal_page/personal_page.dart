@@ -293,7 +293,7 @@ class _PersonalPageState extends State<PersonalPage> {
         GestureDetector(
           onTap: onTap,
           behavior: HitTestBehavior.opaque, // 确保整个区域可点击
-          child: Padding(
+          child: Container(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
             child: Row(
               children: [

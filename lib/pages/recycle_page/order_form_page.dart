@@ -153,7 +153,7 @@ class _OrderFormPageState extends State<OrderFormPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // 总价和预约按钮
-                  Padding(
+                  Container(
                     padding: EdgeInsets.all(16.r),
                     child: Row(
                       children: [

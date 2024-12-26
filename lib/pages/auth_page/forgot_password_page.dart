@@ -57,7 +57,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
+          child: Container(
             padding: EdgeInsets.symmetric(horizontal: 24.w),
             child: Form(
               key: _formKey,
