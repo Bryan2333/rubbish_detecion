@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -12,41 +13,74 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _codeController = TextEditingController();
-  final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final _emailFieldKey = GlobalKey<FormFieldState>();
 
-  bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
-  // bool _codeSent = false;
-  int _countdown = 60;
+  late TextEditingController _usernameController;
+  late TextEditingController _emailController;
+  late TextEditingController _codeController;
+  late TextEditingController _confirmPasswordController;
+
+  late ValueNotifier<String> _newPasswordNotifier;
+  late ValueNotifier<bool> _isNewPasswordVisibleNotifier;
+  late ValueNotifier<bool> _isConfirmPasswordVisibleNotifier;
+  late ValueNotifier<bool> _showPasswordRequirementsNotifier;
+  late ValueNotifier<int> _countdownNotifier;
+
+  late FocusNode _newPasswordFocusNode;
+
   Timer? _timer;
 
   @override
+  void initState() {
+    super.initState();
+
+    _usernameController = TextEditingController();
+    _emailController = TextEditingController();
+    _codeController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
+
+    _newPasswordNotifier = ValueNotifier("");
+    _isNewPasswordVisibleNotifier = ValueNotifier(false);
+    _isConfirmPasswordVisibleNotifier = ValueNotifier(false);
+    _showPasswordRequirementsNotifier = ValueNotifier(false);
+    _countdownNotifier = ValueNotifier(60);
+
+    _newPasswordFocusNode = FocusNode();
+    _newPasswordFocusNode.addListener(() {
+      _showPasswordRequirementsNotifier.value = _newPasswordFocusNode.hasFocus;
+    });
+  }
+
+  @override
   void dispose() {
+    _usernameController.dispose();
     _emailController.dispose();
     _codeController.dispose();
-    _newPasswordController.dispose();
     _confirmPasswordController.dispose();
+
+    _newPasswordNotifier.dispose();
+    _isNewPasswordVisibleNotifier.dispose();
+    _isConfirmPasswordVisibleNotifier.dispose();
+    _showPasswordRequirementsNotifier.dispose();
+    _countdownNotifier.dispose();
+
+    _newPasswordFocusNode.dispose();
+
     _timer?.cancel();
+
     super.dispose();
   }
 
   void _startCountdown() {
     _timer?.cancel();
-    setState(() {
-      _countdown = 60;
-    });
+    _countdownNotifier.value = 60;
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_countdown > 0) {
-        setState(() {
-          _countdown--;
-        });
+      if (_countdownNotifier.value > 0) {
+        _countdownNotifier.value--;
       } else {
         timer.cancel();
+        _countdownNotifier.value = 60;
       }
     });
   }
@@ -82,250 +116,346 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    "请填写您的注册邮箱以重置密码",
+                    "请填写您的用户名和注册邮箱以重置密码",
                     style: TextStyle(
                       fontSize: 16.sp,
                       color: Colors.grey[600],
                     ),
                   ),
                   SizedBox(height: 40.h),
+                  // 用户名输入框
+                  _buildUsernameField(),
+                  SizedBox(height: 20.h),
                   // 邮箱输入框
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      labelText: "邮箱",
-                      hintText: "请输入注册邮箱",
-                      prefixIcon: Icon(
-                        Icons.email_outlined,
-                        color: const Color(0xFF04C264),
-                        size: 22.r,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        borderSide: BorderSide(color: Colors.grey[300]!),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        borderSide: const BorderSide(color: Color(0xFF04C264)),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '请输入邮箱';
-                      }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                          .hasMatch(value)) {
-                        return '请输入有效的邮箱地址';
-                      }
-                      return null;
-                    },
-                  ),
+                  _buildEmailField(),
                   SizedBox(height: 20.h),
                   // 验证码输入区域
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Expanded(
-                        flex: 2,
-                        child: TextFormField(
-                          controller: _codeController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: "验证码",
-                            hintText: "请输入验证码",
-                            prefixIcon: Icon(
-                              Icons.lock_outlined,
-                              color: const Color(0xFF04C264),
-                              size: 22.r,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                              borderSide:
-                                  const BorderSide(color: Color(0xFF04C264)),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return '请输入验证码';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
+                      _buildCodeField(),
                       SizedBox(width: 16.w),
-                      Expanded(
-                        flex: 1,
-                        child: SizedBox(
-                          height: 56.h,
-                          child: ElevatedButton(
-                            onPressed: _countdown == 60
-                                ? () {
-                                    if (_emailController.text.isNotEmpty) {
-                                      _startCountdown();
-                                      // TODO: 发送验证码逻辑
-                                    }
-                                  }
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF04C264),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12.r),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Text(
-                              _countdown == 60 ? "获取验证码" : "${_countdown}s",
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                      _buildCodeButton(),
                     ],
                   ),
                   SizedBox(height: 20.h),
                   // 新密码输入框
-                  TextFormField(
-                    controller: _newPasswordController,
-                    obscureText: !_isPasswordVisible,
-                    decoration: InputDecoration(
-                      labelText: "新密码",
-                      hintText: "请输入新密码",
-                      prefixIcon: Icon(
-                        Icons.lock_outline,
-                        color: const Color(0xFF04C264),
-                        size: 22.r,
-                      ),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _isPasswordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                          color: Colors.grey[600],
-                          size: 22.r,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _isPasswordVisible = !_isPasswordVisible;
-                          });
-                        },
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        borderSide: BorderSide(color: Colors.grey[300]!),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        borderSide: const BorderSide(color: Color(0xFF04C264)),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '请输入新密码';
-                      }
-                      if (value.length < 6) {
-                        return '密码长度不能少于6位';
-                      }
-                      return null;
-                    },
-                  ),
+                  _buildNewPasswordField(),
                   SizedBox(height: 20.h),
                   // 确认密码输入框
-                  TextFormField(
-                    controller: _confirmPasswordController,
-                    obscureText: !_isConfirmPasswordVisible,
-                    decoration: InputDecoration(
-                      labelText: "确认密码",
-                      hintText: "请再次输入新密码",
-                      prefixIcon: Icon(
-                        Icons.lock_outline,
-                        color: const Color(0xFF04C264),
-                        size: 22.r,
-                      ),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _isConfirmPasswordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                          color: Colors.grey[600],
-                          size: 22.r,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _isConfirmPasswordVisible =
-                                !_isConfirmPasswordVisible;
-                          });
-                        },
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        borderSide: BorderSide(color: Colors.grey[300]!),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        borderSide: const BorderSide(color: Color(0xFF04C264)),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '请再次输入新密码';
-                      }
-                      if (value != _newPasswordController.text) {
-                        return '两次输入的密码不一致';
-                      }
-                      return null;
-                    },
-                  ),
+                  _buildConfirmPasswordField(),
                   SizedBox(height: 40.h),
                   // 提交按钮
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50.h,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState?.validate() ?? false) {
-                          // TODO: 处理重置密码逻辑
-                          log("重置密码");
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF04C264),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        "重置密码",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
+                  _buildSubmitButton(),
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required String labelText,
+    required String hintText,
+    required IconData prefixIcon,
+    TextInputType? keyboardType,
+    TextEditingController? controller,
+    String? Function(String?)? validator,
+    Widget? suffixIcon,
+    void Function(String?)? onChanged,
+    bool obscureText = false,
+    FocusNode? focusNode,
+    Key? key,
+  }) {
+    return TextFormField(
+      key: key,
+      focusNode: focusNode,
+      obscureText: obscureText,
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: labelText,
+        hintText: hintText,
+        prefixIcon: Icon(
+          prefixIcon,
+          color: const Color(0xFF04C264),
+          size: 22.r,
+        ),
+        suffixIcon: suffixIcon,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: const BorderSide(
+            color: Color(0xFF04C264),
+          ),
+        ),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 16.w,
+          vertical: 16.h,
+        ),
+      ),
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+      onChanged: onChanged,
+      validator: validator,
+    );
+  }
+
+  Widget _buildUsernameField() {
+    return _buildTextField(
+      labelText: "用户名",
+      hintText: "请输入用户名",
+      keyboardType: TextInputType.name,
+      prefixIcon: Icons.person_outline,
+      controller: _usernameController,
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return '请输入用户名';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildEmailField() {
+    return _buildTextField(
+      key: _emailFieldKey,
+      labelText: "邮箱",
+      hintText: "请输入注册邮箱",
+      keyboardType: TextInputType.emailAddress,
+      prefixIcon: Icons.email_outlined,
+      controller: _emailController,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return '请输入邮箱';
+        }
+        if (EmailValidator.validate(value) == false) {
+          return '请输入有效的邮箱地址';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildCodeField() {
+    return Expanded(
+      child: _buildTextField(
+        labelText: "验证码",
+        hintText: "请输入验证码",
+        keyboardType: TextInputType.number,
+        prefixIcon: Icons.numbers,
+        controller: _codeController,
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return '请输入验证码';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  Widget _buildCodeButton() {
+    return SizedBox(
+      width: 120.w,
+      height: 56.h,
+      child: ValueListenableBuilder(
+        valueListenable: _countdownNotifier,
+        builder: (context, countdown, child) {
+          return ElevatedButton(
+            onPressed: countdown == 60
+                ? () {
+                    if (_emailFieldKey.currentState?.validate() == true) {
+                      // TODO: 发送验证码逻辑
+                      _startCountdown();
+                    }
+                  }
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF04C264),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              elevation: 0,
+              padding: EdgeInsets.zero,
+            ),
+            child: Text(
+              countdown == 60 ? "获取验证码" : "${countdown}s",
+              style: TextStyle(
+                fontSize: 15.sp,
+                color: Colors.white,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildNewPasswordField() {
+    bool hasValidLength(String password) {
+      return password.length >= 6 && password.length <= 20;
+    }
+
+    bool isAlphaNumeric(String password) {
+      return RegExp(r'^[0-9a-zA-Z]+$').hasMatch(password);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ValueListenableBuilder(
+          valueListenable: _isNewPasswordVisibleNotifier,
+          builder: (context, isVisible, child) {
+            return _buildTextField(
+              labelText: "新密码",
+              hintText: "请输入新密码",
+              keyboardType: TextInputType.visiblePassword,
+              prefixIcon: Icons.lock_outline,
+              focusNode: _newPasswordFocusNode, // 绑定焦点节点
+              obscureText: !isVisible,
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _isNewPasswordVisibleNotifier.value
+                      ? Icons.visibility_off
+                      : Icons.visibility,
+                  size: 22.r,
+                  color: Colors.grey,
+                ),
+                onPressed: () {
+                  _isNewPasswordVisibleNotifier.value =
+                      !_isNewPasswordVisibleNotifier.value;
+                },
+              ),
+              onChanged: (value) {
+                _newPasswordNotifier.value = value ?? "";
+
+                _showPasswordRequirementsNotifier.value =
+                    _newPasswordFocusNode.hasFocus;
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return '请输入密码';
+                }
+                if (hasValidLength(value) == false) {
+                  return '密码长度为6-20个字符';
+                }
+                if (isAlphaNumeric(value) == false) {
+                  return '密码只能由数字和字母构成';
+                }
+                return null;
+              },
+            );
+          },
+        ),
+        ValueListenableBuilder(
+          valueListenable: _showPasswordRequirementsNotifier,
+          builder: (context, showRequirements, child) {
+            return Visibility(
+              visible: showRequirements,
+              child: ValueListenableBuilder(
+                valueListenable: _newPasswordNotifier,
+                builder: (context, currentPassword, child) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 8.h),
+                      Text(
+                        "• 长度 6 - 20",
+                        style: TextStyle(
+                          color: hasValidLength(currentPassword)
+                              ? Colors.green
+                              : Colors.red,
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                      Text(
+                        "• 仅使用数字与字母",
+                        style: TextStyle(
+                          color: isAlphaNumeric(currentPassword)
+                              ? Colors.green
+                              : Colors.red,
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConfirmPasswordField() {
+    return ValueListenableBuilder(
+      valueListenable: _isConfirmPasswordVisibleNotifier,
+      builder: (context, isVisible, child) {
+        return _buildTextField(
+          obscureText: !isVisible,
+          labelText: "确认密码",
+          hintText: "请再次输入新密码",
+          keyboardType: TextInputType.visiblePassword,
+          prefixIcon: Icons.lock_outline,
+          controller: _confirmPasswordController,
+          suffixIcon: IconButton(
+            icon: Icon(
+              isVisible ? Icons.visibility_off : Icons.visibility,
+              size: 22.r,
+              color: Colors.grey,
+            ),
+            onPressed: () {
+              _isConfirmPasswordVisibleNotifier.value =
+                  !_isConfirmPasswordVisibleNotifier.value;
+            },
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return '请再次输入新密码';
+            }
+            if (value != _newPasswordNotifier.value) {
+              return '两次输入的密码不一致';
+            }
+            return null;
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 50.h,
+      child: ElevatedButton(
+        onPressed: () {
+          if (_formKey.currentState?.validate() == true) {
+            // TODO: 处理重置密码逻辑
+            log("重置密码");
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF04C264),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          elevation: 0,
+        ),
+        child: Text(
+          "重置密码",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16.sp,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),

@@ -13,14 +13,37 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  bool _isPasswordVisible = false;
+
+  late TextEditingController _usernameController;
+  late TextEditingController _passwordController;
+
+  late ValueNotifier<bool> _isPasswordVisibleNotifier;
+  late ValueNotifier<String> _selectedRoleNotifier;
+
+  final roleList = [
+    {'value': 'user', 'label': '普通用户'},
+    {'value': 'recycler', 'label': '回收员'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    _usernameController = TextEditingController();
+    _passwordController = TextEditingController();
+
+    _isPasswordVisibleNotifier = ValueNotifier<bool>(false);
+    _selectedRoleNotifier = ValueNotifier("user");
+  }
 
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
+
+    _isPasswordVisibleNotifier.dispose();
+    _selectedRoleNotifier.dispose();
+
     super.dispose();
   }
 
@@ -65,203 +88,270 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   SizedBox(height: 40.h),
                   // 用户名输入框
-                  TextFormField(
-                    controller: _usernameController,
-                    decoration: InputDecoration(
-                      labelText: "用户名",
-                      hintText: "请输入用户名",
-                      prefixIcon: Icon(
-                        Icons.person_outline,
-                        color: const Color(0xFF04C264),
-                        size: 22.r,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        borderSide: BorderSide(
-                          color: Colors.grey[300]!,
-                          width: 1,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        borderSide: BorderSide(
-                          color: Colors.grey[300]!,
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        borderSide: const BorderSide(
-                          color: Color(0xFF04C264),
-                          width: 1,
-                        ),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16.w,
-                        vertical: 16.h,
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '请输入用户名';
-                      }
-                      return null;
-                    },
-                  ),
+                  _buildUsernameField(),
                   SizedBox(height: 20.h),
                   // 密码输入框
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: !_isPasswordVisible,
-                    decoration: InputDecoration(
-                      labelText: "密码",
-                      hintText: "请输入密码",
-                      prefixIcon: Icon(
-                        Icons.lock_outline,
-                        color: const Color(0xFF04C264),
-                        size: 22.r,
-                      ),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _isPasswordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                          color: Colors.grey[600],
-                          size: 22.r,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _isPasswordVisible = !_isPasswordVisible;
-                          });
-                        },
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        borderSide: BorderSide(
-                          color: Colors.grey[300]!,
-                          width: 1,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        borderSide: BorderSide(
-                          color: Colors.grey[300]!,
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        borderSide: const BorderSide(
-                          color: Color(0xFF04C264),
-                          width: 1,
-                        ),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16.w,
-                        vertical: 16.h,
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '请输入密码';
-                      }
-                      return null;
-                    },
-                  ),
+                  _buildPasswordField(),
+                  SizedBox(height: 20.h),
+                  // 用户身份栏
+                  _buildRoleField(),
                   SizedBox(height: 16.h),
-                  // 忘记密码按钮
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        // TODO: 处理忘记密码逻辑
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) {
-                              return const ForgotPasswordPage();
-                            },
-                          ),
-                        );
-                      },
-                      child: Text(
-                        "忘记密码？",
-                        style: TextStyle(
-                          color: const Color(0xFF04C264),
-                          fontSize: 14.sp,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 32.h),
+                  _buildForgotPasswordButton(),
+                  SizedBox(height: 20.h),
                   // 登录按钮
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50.h,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState?.validate() ?? false) {
-                          // TODO: 处理登录逻辑
-                          log("登录成功");
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF04C264),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        "登录",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
+                  _buildSubmitButton(),
                   SizedBox(height: 20.h),
                   // 注册入口
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "还没有账号？",
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14.sp,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) {
-                                return const RegisterPage();
-                              },
-                            ),
-                          );
-                        },
-                        child: Text(
-                          "立即注册",
-                          style: TextStyle(
-                            color: const Color(0xFF04C264),
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  _buildRegisterTips(),
                 ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField(
+      {required String labelText,
+      required String hintText,
+      required IconData prefixIcon,
+      TextInputType? keyboardType,
+      TextEditingController? controller,
+      String? Function(String?)? validator,
+      Widget? suffixIcon,
+      void Function(String?)? onChanged,
+      bool obscureText = false,
+      Key? key}) {
+    return TextFormField(
+      key: key,
+      obscureText: obscureText,
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: labelText,
+        hintText: hintText,
+        prefixIcon: Icon(
+          prefixIcon,
+          color: const Color(0xFF04C264),
+          size: 22.r,
+        ),
+        suffixIcon: suffixIcon,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: const BorderSide(
+            color: Color(0xFF04C264),
+          ),
+        ),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 16.w,
+          vertical: 16.h,
+        ),
+      ),
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+      onChanged: onChanged,
+      validator: validator,
+    );
+  }
+
+  Widget _buildUsernameField() {
+    return _buildTextField(
+      labelText: "用户名",
+      hintText: "请输入用户名",
+      keyboardType: TextInputType.name,
+      prefixIcon: Icons.person_outline,
+      controller: _usernameController,
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return '请输入用户名';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return ValueListenableBuilder(
+      valueListenable: _isPasswordVisibleNotifier,
+      builder: (context, isVisible, child) {
+        return _buildTextField(
+          obscureText: !isVisible,
+          labelText: "密码",
+          hintText: "请输入密码",
+          keyboardType: TextInputType.visiblePassword,
+          prefixIcon: Icons.lock_outline,
+          controller: _passwordController,
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return '请输入密码';
+            }
+            return null;
+          },
+          suffixIcon: IconButton(
+            icon: Icon(
+              !isVisible ? Icons.visibility : Icons.visibility_off,
+              color: Colors.grey[600],
+              size: 22.r,
+            ),
+            onPressed: () {
+              _isPasswordVisibleNotifier.value =
+                  !_isPasswordVisibleNotifier.value;
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRoleField() {
+    return ValueListenableBuilder(
+      valueListenable: _selectedRoleNotifier,
+      builder: (context, selectedRole, child) {
+        return DropdownButtonFormField(
+          value: selectedRole,
+          decoration: InputDecoration(
+            labelText: "身份",
+            prefixIcon: Icon(
+              Icons.person_outline,
+              color: const Color(0xFF04C264),
+              size: 22.r,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(
+                color: Colors.grey[300]!,
+                width: 1.w,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(
+                color: Colors.grey[300]!,
+                width: 1.w,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(
+                color: const Color(0xFF04C264),
+                width: 1.w,
+              ),
+            ),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 16.h,
+            ),
+          ),
+          items: roleList.map((item) {
+            return DropdownMenuItem(
+              value: item['value'],
+              child: Text(item['label']!),
+            );
+          }).toList(),
+          onChanged: (newValue) {
+            if (newValue != null) {
+              _selectedRoleNotifier.value = newValue;
+            }
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildForgotPasswordButton() {
+    return Container(
+      alignment: Alignment.centerRight,
+      child: TextButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) {
+                return const ForgotPasswordPage();
+              },
+            ),
+          );
+        },
+        child: Text(
+          "忘记密码？",
+          style: TextStyle(
+            color: const Color(0xFF04C264),
+            fontSize: 14.sp,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 50.h,
+      child: ElevatedButton(
+        onPressed: () {
+          if (_formKey.currentState?.validate() == true) {
+            // TODO: 处理登录逻辑
+            log("登录成功");
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF04C264),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          elevation: 0,
+        ),
+        child: Text(
+          "登录",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16.sp,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRegisterTips() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "还没有账号？",
+          style: TextStyle(
+            color: Colors.grey[600],
+            fontSize: 14.sp,
+          ),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) {
+                  return const RegisterPage();
+                },
+              ),
+            );
+          },
+          child: Text(
+            "立即注册",
+            style: TextStyle(
+              color: const Color(0xFF04C264),
+              fontSize: 14.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
