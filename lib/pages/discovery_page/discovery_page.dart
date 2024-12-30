@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:rubbish_detection/repository/data/news_article.dart';
-import 'package:rubbish_detection/route.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:pull_to_refresh_flutter3/pull_to_refresh_flutter3.dart';
 import 'package:rubbish_detection/pages/discovery_page/discovery_vm.dart';
 import 'package:rubbish_detection/pages/quiz_page/quiz_page.dart';
+import 'package:rubbish_detection/pages/recycle_page/recycle_page.dart';
+import 'package:rubbish_detection/repository/data/news_article.dart';
 import 'package:rubbish_detection/widget/web/webview_page.dart';
 
 class DiscoveryPage extends StatefulWidget {
@@ -17,10 +19,46 @@ class DiscoveryPage extends StatefulWidget {
 class _DiscoveryPageState extends State<DiscoveryPage> {
   final _discoveryViewModel = DiscoveryViewModel();
 
+  final _dateFormatter = DateFormat("yyyy-MM-dd");
+
+  late RefreshController _refreshController;
+
   @override
   void initState() {
     super.initState();
-    _discoveryViewModel.getNews();
+
+    _refreshController = RefreshController(initialRefresh: false);
+
+    _discoveryViewModel.getNews(loadMore: false);
+  }
+
+  @override
+  void dispose() {
+    _refreshController.dispose();
+
+    super.dispose();
+  }
+
+  Future<void> _refreshOrLoad({required bool isLoad}) async {
+    if (isLoad) {
+      if (_discoveryViewModel.hasMore == false) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "没有更多新闻了",
+              style: TextStyle(fontSize: 16.sp),
+            ),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      } else {
+        _discoveryViewModel.getNews(loadMore: true);
+      }
+      _refreshController.loadComplete();
+    } else {
+      _discoveryViewModel.getNews(loadMore: false);
+      _refreshController.refreshCompleted();
+    }
   }
 
   @override
@@ -36,27 +74,28 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
             style: TextStyle(
               fontSize: 24.sp,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Colors.black,
             ),
           ),
         ),
         body: SafeArea(
-          child: RefreshIndicator(
-            color: const Color(0xFF00CE68),
-            onRefresh: () async {
-              await _discoveryViewModel.getNews();
-            },
+          child: SmartRefresher(
+            controller: _refreshController,
+            enablePullDown: true,
+            enablePullUp: true,
+            onRefresh: () => _refreshOrLoad(isLoad: false),
+            onLoading: () => _refreshOrLoad(isLoad: true),
+            header: const WaterDropMaterialHeader(
+              backgroundColor: Colors.white,
+              color: Color(0xFF00CE68),
+            ),
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
-                // 活动专区
-                SliverToBoxAdapter(
-                  child: _buildActivitiesSection(),
-                ),
-                // 新闻列表
-                SliverToBoxAdapter(
-                  child: _buildNewsSection(),
-                ),
+                // 热门活动区
+                SliverToBoxAdapter(child: _buildActivitiesSection()),
+                // 今日热点区
+                ..._buildNewsSection()
               ],
             ),
           ),
@@ -76,7 +115,7 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
             style: TextStyle(
               fontSize: 20.sp,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Colors.black,
             ),
           ),
           SizedBox(height: 16.h),
@@ -85,18 +124,16 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
               Expanded(
                 child: _buildActivityCard(
                   image: "assets/images/delivery.png",
-                  onTap: () =>
-                      Navigator.pushNamed(context, RoutePath.recyclePage),
+                  onTap: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const RecyclingPage())),
                 ),
               ),
               SizedBox(width: 16.w),
               Expanded(
                 child: _buildActivityCard(
                   image: "assets/images/quiz.png",
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const QuizPage()),
-                  ),
+                  onTap: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const QuizPage())),
                 ),
               ),
             ],
@@ -140,58 +177,58 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
     );
   }
 
-  Widget _buildNewsSection() {
-    return Container(
-      margin: EdgeInsets.all(16.r),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
+  List<Widget> _buildNewsSection() {
+    return [
+      SliverToBoxAdapter(
+        child: Container(
+          margin: EdgeInsets.all(16.r),
+          child: Text(
             "今日热点",
             style: TextStyle(
               fontSize: 20.sp,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Colors.black,
             ),
           ),
-          SizedBox(height: 16.h),
-          Consumer<DiscoveryViewModel>(
-            builder: (context, vm, child) {
-              if (vm.newsList.isEmpty) {
-                return Center(
-                  child: SizedBox(
-                    height: 200.h,
-                    child: const CircularProgressIndicator(
-                      color: Color(0xFF00CE68),
-                    ),
-                  ),
-                );
-              }
-
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: vm.newsList.length,
-                itemBuilder: (context, index) =>
-                    _buildNewsCard(vm.newsList[index]),
-              );
-            },
-          ),
-        ],
+        ),
       ),
-    );
+      Consumer<DiscoveryViewModel>(
+        builder: (context, vm, child) {
+          if (vm.newsList.isEmpty) {
+            return const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF00CE68),
+                ),
+              ),
+            );
+          }
+
+          return SliverList(
+            delegate: SliverChildBuilderDelegate(
+              childCount: vm.newsList.length,
+              (context, index) => _buildNewsCard(vm.newsList[index]),
+            ),
+          );
+        },
+      )
+    ];
   }
 
   Widget _buildNewsCard(News news) {
+    final createdTime =
+        _dateFormatter.format(_dateFormatter.parse(news.createdTime ?? ""));
+
     return Container(
-      margin: EdgeInsets.only(bottom: 16.h),
+      margin: EdgeInsets.only(bottom: 16.h, left: 16.w, right: 16.w),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            blurRadius: 10.r,
             offset: const Offset(0, 2),
           ),
         ],
@@ -209,7 +246,7 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
           child: Container(
             padding: EdgeInsets.all(12.r),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start, // 改为顶部对齐
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 新闻图片
                 ClipRRect(
@@ -237,7 +274,7 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
                 // 新闻内容
                 Expanded(
                   child: SizedBox(
-                    height: 90.h, // 设置固定高度，与图片等高
+                    height: 90.h,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -250,7 +287,7 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
                             style: TextStyle(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w500,
-                              color: Colors.black87,
+                              color: Colors.black,
                               height: 1.4,
                             ),
                           ),
@@ -293,16 +330,14 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
                                     color: Colors.grey[500],
                                   ),
                                   SizedBox(width: 2.w),
-                                  Expanded(
-                                    child: Text(
-                                      news.createdTime ?? "",
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(
-                                        fontSize: 12.sp,
-                                        color: Colors.grey[500],
-                                      ),
+                                  Text(
+                                    createdTime,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      color: Colors.grey[500],
                                     ),
                                   ),
                                 ],
