@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:rubbish_detection/pages/rubbish_type_desc_page/rubbish_type_desc_vm.dart';
-import 'package:rubbish_detection/widget/loading_page.dart';
 
 class RubbishTypeDescPage extends StatefulWidget {
   const RubbishTypeDescPage({super.key, required this.type});
@@ -22,7 +21,7 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
         1 => "湿垃圾",
         2 => "可回收物",
         3 => "有害垃圾啊",
-        _ => "未知类型"
+        _ => ""
       };
 
   // 获取主题色
@@ -34,10 +33,24 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
         _ => Colors.grey
       };
 
+  // 获取垃圾类型图标
+  String get _iconImg => switch (widget.type) {
+        0 => "assets/images/solid_waste_3.png",
+        1 => "assets/images/food_waste_3.png",
+        2 => "assets/images/recyclable_waste_3.png",
+        3 => "assets/images/harmful_waste_3.png",
+        _ => ""
+      };
+
   @override
   void initState() {
     super.initState();
     _rubbishTypeDescViewModel.getDesc(widget.type);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
@@ -63,48 +76,46 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
             onPressed: () => Navigator.pop(context),
           ),
         ),
-        body: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: SafeArea(
-            child: Consumer<RubbishTypeDescViewModel>(
-              builder: (context, vm, child) {
-                if (vm.desc == null) {
-                  LoadingPage.showLoading();
-                  return const SizedBox();
-                }
-
-                LoadingPage.hideLoading();
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 介绍卡片
-                    _buildDescCard(vm.desc?.name ?? "", vm.desc?.desc ?? ""),
-                    SizedBox(height: 24.h),
-                    // 投放要求
-                    _buildSection(
-                      title: "投放要求",
-                      icon: Icons.assignment_outlined,
-                      children: _buildDisposalAdvice(vm.desc?.disposalAdvice),
-                    ),
-                    SizedBox(height: 24.h),
-                    // 处置方法
-                    _buildSection(
-                      title: "处置方法",
-                      icon: Icons.recycling,
-                      children: _buildHandlerMethods(vm.desc?.handleMethods),
-                    ),
-                    SizedBox(height: 24.h),
-                    // 常见物品
-                    _buildSection(
-                      title: "常见物品",
-                      icon: Icons.category_outlined,
-                      children: _buildCommonThings(vm.desc?.commonThings),
-                    ),
-                    SizedBox(height: 24.h),
-                  ],
+        body: SafeArea(
+          child: Consumer<RubbishTypeDescViewModel>(
+            builder: (context, vm, child) {
+              if (vm.desc == null) {
+                return const Center(child: CircularProgressIndicator());
+              } else {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 介绍卡片
+                      _buildDescCard(vm.desc?.name ?? "", vm.desc?.desc ?? ""),
+                      SizedBox(height: 24.h),
+                      // 投放要求
+                      _buildSection(
+                        title: "投放要求",
+                        icon: Icons.assignment_outlined,
+                        children: _buildDisposalAdvice(vm.desc?.disposalAdvice),
+                      ),
+                      SizedBox(height: 24.h),
+                      // 处置方法
+                      _buildSection(
+                        title: "处置方法",
+                        icon: Icons.recycling,
+                        children: _buildHandlerMethods(vm.desc?.handleMethods),
+                      ),
+                      SizedBox(height: 24.h),
+                      // 常见物品
+                      _buildSection(
+                        title: "常见物品",
+                        icon: Icons.category_outlined,
+                        children: _buildCommonThings(vm.desc?.commonThings),
+                      ),
+                      SizedBox(height: 24.h),
+                    ],
+                  ),
                 );
-              },
-            ),
+              }
+            },
           ),
         ),
       ),
@@ -112,14 +123,6 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
   }
 
   Widget _buildDescCard(String name, String desc) {
-    final icon = switch (widget.type) {
-      0 => "assets/images/solid_waste_3.png",
-      1 => "assets/images/food_waste_3.png",
-      2 => "assets/images/recyclable_waste_3.png",
-      3 => "assets/images/harmful_waste_3.png",
-      _ => ""
-    };
-
     return Container(
       decoration: BoxDecoration(
         color: _themeColor,
@@ -141,7 +144,7 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
               borderRadius: BorderRadius.circular(20.r),
             ),
             child: Image.asset(
-              icon,
+              _iconImg,
               width: 80.w,
               height: 80.h,
             ),
@@ -213,7 +216,7 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
                   style: TextStyle(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Colors.black,
                   ),
                 ),
               ],
@@ -250,7 +253,7 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
               text,
               style: TextStyle(
                 fontSize: 16.sp,
-                color: Colors.black87,
+                color: Colors.black,
                 height: 1.5.h,
               ),
             ),
