@@ -2,16 +2,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_swiper_view/flutter_swiper_view.dart';
-import 'package:image_cropper/image_cropper.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:oktoast/oktoast.dart';
 import 'package:provider/provider.dart';
-import 'package:rubbish_detection/route.dart';
+import 'package:rubbish_detection/pages/collection_page/collection_page.dart';
+import 'package:rubbish_detection/pages/record_page/record_page.dart';
 import 'package:rubbish_detection/utils/image_classification_helper.dart';
 import 'package:image/image.dart' as image_lib;
 import 'package:rubbish_detection/pages/home_page/home_vm.dart';
 import 'package:rubbish_detection/pages/recognization_result_page/recognization_result_page.dart';
 import 'package:rubbish_detection/pages/rubbish_type_desc_page/rubbish_type_desc_page.dart';
+import 'package:rubbish_detection/utils/image_helper.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,354 +21,68 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final _homeViewModel = HomeViewModel();
+  final _imageClassificationHelper = ImageClassificationHelper.instance;
 
-  late ImageClassificationHelper _imageHelper;
+  final _categoryCards = [
+    {"title": "干垃圾", "image": "assets/images/solid_waste.png", "type": 0},
+    {"title": "湿垃圾", "image": "assets/images/food_waste.png", "type": 1},
+    {"title": "可回收物", "image": "assets/images/recyclable_waste.png", "type": 2},
+    {"title": "有害垃圾", "image": "assets/images/harmful_waste.png", "type": 3},
+  ];
+
   late TextEditingController _searchBarController;
+  late ValueNotifier<bool> _hasTextNotifier;
 
   @override
   void initState() {
     super.initState();
+
     _homeViewModel.getBannerData();
-    _imageHelper = ImageClassificationHelper();
+
+    _hasTextNotifier = ValueNotifier(false);
+
     _searchBarController = TextEditingController();
+    _searchBarController.addListener(() {
+      _hasTextNotifier.value = _searchBarController.text.trim().isNotEmpty;
+    });
   }
 
   @override
   void dispose() {
-    super.dispose();
     _searchBarController.dispose();
+    _hasTextNotifier.dispose();
+
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          "首页",
-          style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold),
-        ),
         centerTitle: true,
+        title: Text(
+          "垃圾分类助手",
+          style: TextStyle(
+            fontSize: 24.sp,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
       ),
       body: ChangeNotifierProvider(
         create: (context) => _homeViewModel,
         child: SafeArea(
-          child: Column(
-            children: [
-              // 搜索框
-              Container(
-                margin: EdgeInsets.only(left: 15.w, right: 15.w, bottom: 20.h),
-                padding: EdgeInsets.only(left: 10.w),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black),
-                  borderRadius: BorderRadius.circular(10.r),
-                ),
-                child: TextField(
-                  controller: _searchBarController,
-                  textAlignVertical: TextAlignVertical.center,
-                  decoration: InputDecoration(
-                    hintText: "请输入垃圾名称",
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    contentPadding: EdgeInsets.zero,
-                    border: InputBorder.none,
-                    prefixIcon: Icon(
-                      Icons.search,
-                      size: 30.r,
-                    ),
-                    suffixIcon: _searchBarController.text.isNotEmpty
-                        ? IconButton(
-                            onPressed: () {
-                              setState(() {
-                                _searchBarController.text = "";
-                                _searchBarController.clear();
-                              });
-                            },
-                            icon: Icon(Icons.clear, size: 30.r),
-                          )
-                        : null,
-                  ),
-                  onChanged: (_) {
-                    setState(() {});
-                  },
-                  onSubmitted: (value) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return RecognizationResultPage(
-                            imagePath: "",
-                            rubbishName: value,
-                          );
-                        },
-                      ),
-                    );
-                  },
-                  onTapOutside: (_) {
-                    FocusManager.instance.primaryFocus?.unfocus();
-                  },
-                ),
-              ),
-              // banner
-              Consumer<HomeViewModel>(
-                builder: (context, vm, child) {
-                  return Container(
-                    margin: EdgeInsets.only(
-                      bottom: 20.h,
-                      left: 15.w,
-                      right: 15.w,
-                    ),
-                    height: 150.h,
-                    child: Swiper(
-                      indicatorLayout: PageIndicatorLayout.COLOR,
-                      autoplay: true,
-                      pagination: const SwiperPagination(), // 分页指示器
-                      control: const SwiperControl(), // 左右两侧控制按钮
-                      itemCount: vm.bannerList.length,
-                      itemBuilder: (context, index) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(15.r),
-                          child: Image.network(
-                            vm.bannerList[index].imagePath ?? "",
-                            fit: BoxFit.fill,
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-              Container(
-                margin: EdgeInsets.only(left: 20.w, bottom: 15.h),
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "垃圾识别",
-                  style:
-                      TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold),
-                ),
-              ),
-              Container(
-                margin: EdgeInsets.only(left: 30.w, right: 30.w),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () async {
-                        final imageSource = await _showPickerDialog(context);
-                        if (imageSource == null) {
-                          return;
-                        }
-
-                        final image = await _pickImage(imageSource);
-                        if (image == null) {
-                          return;
-                        }
-
-                        final rubbish = await _predict(image);
-                        if (rubbish == null) {
-                          return;
-                        }
-
-                        if (context.mounted) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) {
-                                return RecognizationResultPage(
-                                  rubbishName: rubbish,
-                                  imagePath: image.path,
-                                );
-                              },
-                            ),
-                          );
-                        }
-                      },
-                      child: Column(
-                        children: [
-                          Image.asset(
-                            "assets/images/camera.png",
-                            width: 35.r,
-                            height: 35.r,
-                          ),
-                          SizedBox(height: 10.h),
-                          Text("图像识别", style: TextStyle(fontSize: 16.sp))
-                        ],
-                      ),
-                    ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(context, RoutePath.recordPage);
-                      },
-                      child: Column(
-                        children: [
-                          Image.asset(
-                            "assets/images/microphone.png",
-                            width: 35.r,
-                            height: 35.r,
-                          ),
-                          SizedBox(height: 10.h),
-                          Text("语言搜索", style: TextStyle(fontSize: 16.sp)),
-                        ],
-                      ),
-                    ),
-                    const Spacer(),
-                    GestureDetector(
-                      child: Column(
-                        children: [
-                          Image.asset(
-                            "assets/images/collection.png",
-                            width: 35.r,
-                            height: 35.r,
-                          ),
-                          SizedBox(height: 10.h),
-                          Text("识别收藏", style: TextStyle(fontSize: 16.sp)),
-                        ],
-                      ),
-                    )
-                  ],
-                ),
-              ),
-              SizedBox(height: 15.h),
-              Container(
-                margin: EdgeInsets.only(left: 20.w, bottom: 5.h),
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "垃圾分类",
-                  style:
-                      TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold),
-                ),
-              ),
-              Expanded(
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  childAspectRatio: 1.5,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (coutext) {
-                              return const RubbishTypeDescPage(type: 3);
-                            },
-                          ),
-                        );
-                      },
-                      child: Container(
-                        margin: EdgeInsets.only(left: 15.w, top: 10.h),
-                        child: Stack(
-                          children: [
-                            Image.asset(
-                              "assets/images/solid_waste.png",
-                            ),
-                            Positioned(
-                              top: 35.h,
-                              left: 15.w,
-                              child: Text(
-                                "干垃圾",
-                                style: TextStyle(
-                                    fontSize: 16.sp, color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) {
-                              return const RubbishTypeDescPage(type: 2);
-                            },
-                          ),
-                        );
-                      },
-                      child: Container(
-                        margin: EdgeInsets.only(left: 15.w, top: 10.h),
-                        child: Stack(
-                          children: [
-                            Image.asset(
-                              "assets/images/food_waste.png",
-                            ),
-                            Positioned(
-                              top: 35.h,
-                              left: 15.w,
-                              child: Text(
-                                "湿垃圾",
-                                style: TextStyle(
-                                    fontSize: 16.sp, color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) {
-                              return const RubbishTypeDescPage(type: 0);
-                            },
-                          ),
-                        );
-                      },
-                      child: Container(
-                        margin: EdgeInsets.only(left: 15.w),
-                        child: Stack(
-                          children: [
-                            Image.asset(
-                              "assets/images/recyclable_waste.png",
-                            ),
-                            Positioned(
-                              top: 35.h,
-                              left: 15.w,
-                              child: Text(
-                                "可回收物",
-                                style: TextStyle(
-                                    fontSize: 16.sp, color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) {
-                              return const RubbishTypeDescPage(type: 1);
-                            },
-                          ),
-                        );
-                      },
-                      child: Container(
-                        margin: EdgeInsets.only(left: 15.w),
-                        child: Stack(
-                          children: [
-                            Image.asset(
-                              "assets/images/harmful_waste.png",
-                            ),
-                            Positioned(
-                              top: 35.h,
-                              left: 15.w,
-                              child: Text(
-                                "有害垃圾",
-                                style: TextStyle(
-                                    fontSize: 16.sp, color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              // 搜索栏
+              SliverToBoxAdapter(child: _buildSearchBar()),
+              // 横幅
+              SliverToBoxAdapter(child: _buildBanner()),
+              // 识别功能区
+              SliverToBoxAdapter(child: _buildRecognitionSection()),
+              // 垃圾分类指南
+              SliverToBoxAdapter(child: _buildCategorySection()),
             ],
           ),
         ),
@@ -377,98 +90,406 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<ImageSource?> _showPickerDialog(BuildContext context) async {
-    ImageSource? source;
-    await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('选择图片'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera),
-                title: const Text('拍照'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  source = ImageSource.camera;
-                },
+  Widget _buildSearchBar() {
+    return Container(
+      margin: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10.r,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchBarController,
+        textAlignVertical: TextAlignVertical.center,
+        decoration: InputDecoration(
+          hintText: "搜索垃圾分类",
+          hintStyle: TextStyle(color: Colors.grey[400]),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16.w),
+          border: InputBorder.none,
+          prefixIcon: Icon(
+            Icons.search,
+            size: 24.r,
+            color: const Color(0xFF00CE68),
+          ),
+          suffixIcon: ValueListenableBuilder(
+            valueListenable: _hasTextNotifier,
+            builder: (context, hasText, child) {
+              return Visibility(
+                visible: hasText,
+                child: IconButton(
+                  onPressed: _searchBarController.clear,
+                  icon: Icon(
+                    Icons.clear,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        onSubmitted: _onSearchSubmitted,
+        onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+      ),
+    );
+  }
+
+  void _onSearchSubmitted(query) {
+    if (query.trim().isEmpty) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) {
+          return RecognizationResultPage(
+            rubbishName: query,
+            imagePath: null,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBanner() {
+    return Consumer<HomeViewModel>(
+      builder: (context, vm, child) {
+        return Container(
+          margin: EdgeInsets.only(left: 16.w, right: 16.w),
+          height: 160.h,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16.r),
+            child: Swiper(
+              itemCount: vm.bannerList.length,
+              autoplay: true,
+              controller: SwiperController(),
+              pagination: SwiperPagination(
+                margin: EdgeInsets.only(bottom: 12.h),
+                builder: DotSwiperPaginationBuilder(
+                  activeColor: const Color(0xFF00CE68),
+                  color: Colors.white.withOpacity(0.8),
+                  size: 8.r,
+                  activeSize: 8.r,
+                ),
               ),
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('从相册选择'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  source = ImageSource.gallery;
-                },
-              ),
-            ],
+              itemBuilder: (context, index) {
+                return Image.network(
+                  vm.bannerList[index].imagePath ?? "",
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Center(
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      size: 50.r,
+                      color: Colors.grey,
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         );
       },
     );
-
-    return source;
   }
 
-  Future<File?> _pickImage(ImageSource source) async {
-    final returnImage = await ImagePicker().pickImage(source: source);
-
-    if (returnImage != null) {
-      final croppedImage = await _cropImage(returnImage);
-
-      return File(croppedImage.path);
-    }
-
-    return null;
-  }
-
-  Future<CroppedFile> _cropImage(XFile image) async {
-    final croppedImage = await ImageCropper().cropImage(
-      sourcePath: image.path,
-      uiSettings: [
-        AndroidUiSettings(
-          aspectRatioPresets: [
-            CropAspectRatioPreset.original,
-            CropAspectRatioPreset.square,
-            CropAspectRatioPreset.ratio3x2,
-            CropAspectRatioPreset.ratio4x3,
-            CropAspectRatioPreset.ratio16x9,
-          ],
-          toolbarColor: Colors.white,
-          toolbarTitle: "图片裁剪",
-          toolbarWidgetColor: Colors.black,
-          initAspectRatio: CropAspectRatioPreset.original,
-          lockAspectRatio: false,
-        )
-      ],
+  Widget _buildRecognitionSection() {
+    return Container(
+      margin: EdgeInsets.all(16.r),
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "智能识别",
+            style: TextStyle(
+              fontSize: 20.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildFeatureItem(
+                icon: "assets/images/camera.png",
+                title: "图像识别",
+                onTap: _imageRecognition,
+              ),
+              _buildFeatureItem(
+                icon: "assets/images/microphone.png",
+                title: "语音搜索",
+                onTap: _navigateToRecordPage,
+              ),
+              _buildFeatureItem(
+                icon: "assets/images/collection.png",
+                title: "识别收藏",
+                onTap: _navigateToCollectionPage,
+              ),
+            ],
+          ),
+        ],
+      ),
     );
+  }
 
-    return croppedImage!;
+  void _navigateToRecordPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) {
+          return const RecordPage();
+        },
+      ),
+    );
+  }
+
+  void _navigateToCollectionPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) {
+          return const CollectionPage();
+        },
+      ),
+    );
+  }
+
+  Widget _buildFeatureItem({
+    required String icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(12.r),
+            decoration: BoxDecoration(
+              color: const Color(0xFF00CE68).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Image.asset(
+              icon,
+              width: 28.r,
+              height: 28.r,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategorySection() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16.r),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10.r,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 标题部分
+          Container(
+            padding: EdgeInsets.all(16.r),
+            child: Text(
+              "垃圾分类指南",
+              style: TextStyle(
+                fontSize: 20.sp,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+          ),
+          // 分类卡片网格
+          Container(
+            padding: EdgeInsets.only(
+              left: 16.r,
+              right: 16.r,
+              bottom: 16.r,
+              top: 0,
+            ),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 1.5,
+                crossAxisSpacing: 16.w,
+                mainAxisSpacing: 16.h,
+              ),
+              itemCount: _categoryCards.length,
+              itemBuilder: (context, index) {
+                return _buildCategoryCard(
+                  title: _categoryCards[index]["title"] as String,
+                  imagePath: _categoryCards[index]["image"] as String,
+                  onTap: () => _navigateToRubbishDescPage(
+                      _categoryCards[index]["type"] as int),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToRubbishDescPage(int type) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) {
+          return RubbishTypeDescPage(type: type);
+        },
+      ),
+    );
+  }
+
+  Widget _buildCategoryCard({
+    required String title,
+    required String imagePath,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16.r),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(
+                imagePath,
+                fit: BoxFit.cover,
+              ),
+              // 分类标题
+              Positioned(
+                left: 16.w,
+                bottom: 16.h,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 4.w,
+                      height: 16.h,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF00CE68),
+                        borderRadius: BorderRadius.circular(2.r),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _imageRecognition() async {
+    final imageSource = await ImageHelper.showPickerDialog(context);
+    if (imageSource == null) return;
+
+    final image = await ImageHelper.pickImage(source: imageSource);
+    if (image == null) return;
+
+    final rubbish = await _predict(image);
+    if (rubbish == null) return;
+
+    if (mounted == false) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) {
+          return RecognizationResultPage(
+            rubbishName: rubbish,
+            imagePath: image.path,
+          );
+        },
+      ),
+    );
   }
 
   Future<String?> _predict(File file) async {
-    final image = image_lib.decodeImage(file.readAsBytesSync())!;
+    final image = image_lib.decodeImage(file.readAsBytesSync());
+    if (image == null) return null;
 
-    final result = await _imageHelper.inferenceImage(image);
+    final result = await _imageClassificationHelper.inferenceImage(image);
 
-    final sortedList = result.entries.toList()
+    final sortedResults = result.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    final sortedMap = Map.fromEntries(sortedList);
+    if (sortedResults.isEmpty) return null;
 
-    final resultEn = sortedMap.keys.first;
-    final resultEnIdx =
-        _imageHelper.labelsEn.indexWhere((item) => item == resultEn);
+    final topResult = sortedResults.first.key;
+    final topIndex = _imageClassificationHelper.labelsEn.indexOf(topResult);
 
-    if (resultEnIdx < 400) {
-      showToast("识别失败");
+    if (topIndex < 400) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "识别失败，请重新尝试",
+              style: TextStyle(fontSize: 16),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return null;
     }
 
-    final resultZh = _imageHelper.labensZh[resultEnIdx - 400 + 1];
-
-    return resultZh;
+    return _imageClassificationHelper.labelsZh[topIndex - 399];
   }
 }
