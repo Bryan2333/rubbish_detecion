@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
-import 'package:oktoast/oktoast.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -19,8 +18,10 @@ class RecordPage extends StatefulWidget {
 
 class _RecordPageState extends State<RecordPage>
     with SingleTickerProviderStateMixin {
-  bool _isRecording = false;
   final _recordViewModel = RecordViewModel();
+
+  late ValueNotifier<bool> _isRecordingNotifier;
+
   late AudioRecorder _recorder;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -28,22 +29,26 @@ class _RecordPageState extends State<RecordPage>
   @override
   void initState() {
     super.initState();
+    _isRecordingNotifier = ValueNotifier(false);
     _recorder = AudioRecorder();
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+    _animationController.repeat(reverse: true);
+
+    _scaleAnimation = Tween(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: Curves.easeInOut,
       ),
     );
-    _animationController.repeat(reverse: true);
   }
 
   @override
   void dispose() {
+    _isRecordingNotifier.dispose();
     _animationController.dispose();
     _recorder.dispose();
     super.dispose();
@@ -54,166 +59,95 @@ class _RecordPageState extends State<RecordPage>
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Colors.black,
+            size: 20.r,
+          ),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         elevation: 0,
         backgroundColor: Colors.white,
+        centerTitle: true,
         title: Text(
           "语音识别",
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 24.sp,
-            color: Colors.black87,
+            color: Colors.black,
           ),
         ),
-        centerTitle: true,
       ),
       body: SafeArea(
         child: Column(
           children: [
             // 顶部提示区域
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 30.h),
-              child: Column(
-                children: [
-                  Text(
-                    "请点击下面的麦克风",
-                    style: TextStyle(
-                      fontSize: 22.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    "说出您要分类的垃圾",
-                    style: TextStyle(
-                      fontSize: 22.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildHeader(),
             // 示例区域
-            Expanded(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 24.w),
-                child: Column(
-                  children: [
-                    SizedBox(height: 30.h),
-                    Text(
-                      "您可以这样说",
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        color: Colors.black54,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(height: 20.h),
-                    Wrap(
-                      spacing: 12.w,
-                      runSpacing: 12.h,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        _buildExampleChip("纸巾"),
-                        _buildExampleChip("塑胶品"),
-                        _buildExampleChip("温度计"),
-                        _buildExampleChip("蓄电池"),
-                        _buildExampleChip("外卖盒"),
-                        _buildExampleChip("苹果皮"),
-                      ],
-                    ),
-                  ],
-                ),
+            _buildExamples(),
+            // 录音按钮区域
+            _buildMicButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 30.h),
+      child: Column(
+        children: [
+          Text(
+            "请点击下面的麦克风",
+            style: TextStyle(
+              fontSize: 22.sp,
+              color: Colors.black,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            "说出您要分类的垃圾",
+            style: TextStyle(
+              fontSize: 22.sp,
+              color: Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExamples() {
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 24.w),
+        child: Column(
+          children: [
+            SizedBox(height: 30.h),
+            Text(
+              "您可以这样说",
+              style: TextStyle(
+                fontSize: 16.sp,
+                color: Colors.black54,
               ),
             ),
-
-            // 录音按钮区域
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 40.h),
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onTap: () async {
-                      if (_isRecording) {
-                        final payload = await _stopRecord();
-                        setState(() => _isRecording = false);
-                        _animationController.stop();
-
-                        final res =
-                            await _recordViewModel.getResponse(payload ?? "");
-
-                        if (res?.result?.isEmpty == true) {
-                          showToast("语音识别失败！");
-                          return;
-                        }
-
-                        if (context.mounted == false) {
-                          return;
-                        }
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => RecognizationResultPage(
-                              rubbishName: res?.result ?? "",
-                            ),
-                          ),
-                        );
-                      } else {
-                        await _startRecord();
-                        setState(() => _isRecording = true);
-                        _animationController.repeat(reverse: true);
-                      }
-                    },
-                    child: AnimatedBuilder(
-                      animation: _scaleAnimation,
-                      builder: (context, child) {
-                        return Transform.scale(
-                          scale: _isRecording ? _scaleAnimation.value : 1.0,
-                          child: Container(
-                            height: 100.h,
-                            width: 100.h,
-                            decoration: BoxDecoration(
-                              color: _isRecording
-                                  ? const Color(0xFFFF3197)
-                                  : const Color(0xFF00CE68),
-                              borderRadius: BorderRadius.circular(50.r),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: (_isRecording
-                                          ? const Color(0xFFFF3197)
-                                          : const Color(0xFF00CE68))
-                                      .withOpacity(0.3),
-                                  spreadRadius: 4,
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Image.asset(
-                              "assets/images/microphone_2.png",
-                              width: 50.r,
-                              height: 50.r,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    _isRecording ? "点击停止" : "点击说话",
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      color: _isRecording
-                          ? const Color(0xFFFF3197)
-                          : const Color(0xFF00CE68),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
+            SizedBox(height: 20.h),
+            Wrap(
+              spacing: 12.w,
+              runSpacing: 12.h,
+              alignment: WrapAlignment.center,
+              children: [
+                _buildExampleChip("纸巾"),
+                _buildExampleChip("塑胶品"),
+                _buildExampleChip("温度计"),
+                _buildExampleChip("蓄电池"),
+                _buildExampleChip("外卖盒"),
+                _buildExampleChip("苹果皮"),
+              ],
             ),
           ],
         ),
@@ -233,15 +167,83 @@ class _RecordPageState extends State<RecordPage>
         style: TextStyle(
           fontSize: 14.sp,
           color: const Color(0xFF00CE68),
-          fontWeight: FontWeight.w500,
         ),
       ),
     );
   }
 
-  // _startRecord 和 _stopRecord 方法保持不变
+  Widget _buildMicButton() {
+    return Container(
+      margin: EdgeInsets.only(bottom: 100.h),
+      child: ValueListenableBuilder(
+        valueListenable: _isRecordingNotifier,
+        builder: (context, isRecording, child) {
+          return Column(
+            children: [
+              GestureDetector(
+                onTap: () async {
+                  if (isRecording) {
+                    final payload = await _stopRecording();
+                    _isRecordingNotifier.value = false;
+                    _getRecordRecognition(payload ?? "");
+                  } else {
+                    await _startRecording();
+                    _isRecordingNotifier.value = true;
+                  }
+                },
+                child: AnimatedBuilder(
+                  animation: _scaleAnimation,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: isRecording ? _scaleAnimation.value : 1.0,
+                      child: Container(
+                        height: 90.h,
+                        width: 90.h,
+                        decoration: BoxDecoration(
+                          color: isRecording
+                              ? const Color(0xFFFF3197)
+                              : const Color(0xFF00CE68),
+                          borderRadius: BorderRadius.circular(50.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (isRecording
+                                      ? const Color(0xFFFF3197)
+                                      : const Color(0xFF00CE68))
+                                  .withOpacity(0.3),
+                              spreadRadius: 4.r,
+                              blurRadius: 15.r,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.mic,
+                          color: Colors.white,
+                          size: 60.r,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              SizedBox(height: 16.h),
+              Text(
+                isRecording ? "点击停止" : "点击说话",
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: isRecording
+                      ? const Color(0xFFFF3197)
+                      : const Color(0xFF00CE68),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 
-  Future<void> _startRecord() async {
+  Future<void> _startRecording() async {
     if (await _recorder.hasPermission()) {
       final appCacheDir = await getApplicationCacheDirectory();
 
@@ -251,11 +253,27 @@ class _RecordPageState extends State<RecordPage>
         const RecordConfig(encoder: AudioEncoder.opus),
         path: filePath,
       );
+
+      _animationController.repeat(reverse: true);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+            content: Text(
+              "请先授予录音权限",
+              style: TextStyle(fontSize: 16.sp),
+            ),
+          ),
+        );
+      }
     }
   }
 
-  Future<String?> _stopRecord() async {
+  Future<String?> _stopRecording() async {
     final audioFilePath = await _recorder.stop();
+    _animationController.stop();
 
     if (audioFilePath == null) {
       return null;
@@ -275,5 +293,35 @@ class _RecordPageState extends State<RecordPage>
     });
 
     return payload;
+  }
+
+  Future<void> _getRecordRecognition(String payload) async {
+    final res = await _recordViewModel.getResponse(payload);
+
+    if (mounted == false) {
+      return;
+    }
+
+    if (res?.result?.isEmpty == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+          content: Text(
+            "识别失败，请重新尝试",
+            style: TextStyle(fontSize: 16.sp),
+          ),
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RecognizationResultPage(
+            rubbishName: res?.result ?? "",
+          ),
+        ),
+      );
+    }
   }
 }
