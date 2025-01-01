@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rubbish_detection/route.dart';
+import 'package:rubbish_detection/pages/quiz_page/quiz_page.dart';
 
 class QuizResultPage extends StatefulWidget {
-  const QuizResultPage({super.key});
+  const QuizResultPage(
+      {super.key, required this.correctAnswers, required this.totalQuestions});
+
+  final int correctAnswers;
+  final int totalQuestions;
 
   @override
   State<QuizResultPage> createState() => _QuizResultPageState();
@@ -57,26 +61,11 @@ class _QuizResultPageState extends State<QuizResultPage>
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, int>;
-    final correctAnswers = args["correctAnswers"] ?? 0;
-    final totalQuestions = args["totalQuestions"] ?? 1;
-    final percentage = correctAnswers / totalQuestions;
+    final percentage = widget.correctAnswers / widget.totalQuestions;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF00CE68),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: const Color(0xFF00CE68),
-        centerTitle: true,
-        title: Text(
-          "测验结果",
-          style: TextStyle(
-            fontSize: 24.sp,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      ),
+      backgroundColor: Colors.white,
+      appBar: _buildAppBar(),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -94,123 +83,23 @@ class _QuizResultPageState extends State<QuizResultPage>
                         color: Colors.black.withOpacity(0.1),
                         blurRadius: 20.r,
                         spreadRadius: 5.r,
-                        offset: const Offset(0, 10),
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
                   child: Column(
                     children: [
                       // 结果图标
-                      ScaleTransition(
-                        scale: _scaleAnimation,
-                        child: Container(
-                          padding: EdgeInsets.all(16.r),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF00CE68).withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            percentage >= 0.6
-                                ? Icons.emoji_events_rounded
-                                : Icons.stars_rounded,
-                            size: 64.r,
-                            color: const Color(0xFF00CE68),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 24.h),
+                      _buildResultIcon(percentage),
                       // 结果评语
-                      FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: Text(
-                          _getResultComment(percentage),
-                          style: TextStyle(
-                            fontSize: 28.sp,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF00CE68),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 16.h),
+                      _buildResultComment(percentage),
                       // 分数展示
-                      AnimatedBuilder(
-                        animation: _scoreAnimation,
-                        builder: (context, child) {
-                          return Column(
-                            children: [
-                              Text(
-                                "${(percentage * 100 * _scoreAnimation.value).toInt()}%",
-                                style: TextStyle(
-                                  fontSize: 48.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              SizedBox(height: 8.h),
-                              Text(
-                                "答对 $correctAnswers / $totalQuestions 题",
-                                style: TextStyle(
-                                  fontSize: 18.sp,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                      SizedBox(height: 32.h),
+                      _buildScoreDisplay(percentage, widget.correctAnswers,
+                          widget.totalQuestions),
                       // 进度条
-                      AnimatedBuilder(
-                        animation: _scoreAnimation,
-                        builder: (context, child) {
-                          return Container(
-                            height: 8.h,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(4.r),
-                            ),
-                            child: FractionallySizedBox(
-                              alignment: Alignment.centerLeft,
-                              widthFactor: percentage * _scoreAnimation.value,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF00CE68),
-                                  borderRadius: BorderRadius.circular(4.r),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      SizedBox(height: 32.h),
+                      _buildProgressBar(percentage),
                       // 按钮区域
-                      FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: _buildButton(
-                                text: "返回发现",
-                                isOutlined: true,
-                                onPressed: () => Navigator.pop(context),
-                              ),
-                            ),
-                            SizedBox(width: 16.w),
-                            Expanded(
-                              child: _buildButton(
-                                text: "再测一次",
-                                onPressed: () {
-                                  Navigator.pushReplacementNamed(
-                                    context,
-                                    RoutePath.quizPage,
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      _buildButtons(),
                     ],
                   ),
                 ),
@@ -218,6 +107,155 @@ class _QuizResultPageState extends State<QuizResultPage>
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      elevation: 0,
+      backgroundColor: Colors.white,
+      centerTitle: true,
+      title: Text(
+        "测验结果",
+        style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold),
+      ),
+      leading: IconButton(
+        onPressed: () => Navigator.pop(context),
+        icon: Icon(
+          Icons.arrow_back_ios,
+          size: 20.r,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResultIcon(double percentage) {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: Container(
+        margin: EdgeInsets.only(bottom: 24.h),
+        padding: EdgeInsets.all(16.r),
+        decoration: BoxDecoration(
+          color: const Color(0xFF00CE68).withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          percentage >= 0.6 ? Icons.emoji_events_rounded : Icons.stars_rounded,
+          size: 64.r,
+          color: const Color(0xFF00CE68),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResultComment(double percentage) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.h),
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Text(
+          _getResultComment(percentage),
+          style: TextStyle(
+            fontSize: 28.sp,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF00CE68),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScoreDisplay(
+      double percentage, int correctAnswers, int totalQuestions) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 32.h),
+      child: AnimatedBuilder(
+        animation: _scoreAnimation,
+        builder: (context, child) {
+          return Column(
+            children: [
+              Text(
+                "${(percentage * 100 * _scoreAnimation.value).toInt()}%",
+                style: TextStyle(
+                  fontSize: 48.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                "答对 $correctAnswers / $totalQuestions 题",
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildProgressBar(double percentage) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 32.h),
+      child: AnimatedBuilder(
+        animation: _scoreAnimation,
+        builder: (context, child) {
+          return Container(
+            height: 8.h,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(4.r),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: percentage * _scoreAnimation.value,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00CE68),
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildButtons() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildButton(
+              text: "返回发现",
+              isOutlined: true,
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          SizedBox(width: 16.w),
+          Expanded(
+            child: _buildButton(
+              text: "再测一次",
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) {
+                      return const QuizPage();
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -245,7 +283,7 @@ class _QuizResultPageState extends State<QuizResultPage>
                 : [
                     BoxShadow(
                       color: const Color(0xFF00CE68).withOpacity(0.3),
-                      blurRadius: 12,
+                      blurRadius: 12.r,
                       offset: const Offset(0, 4),
                     ),
                   ],
@@ -255,7 +293,7 @@ class _QuizResultPageState extends State<QuizResultPage>
               text,
               style: TextStyle(
                 fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.bold,
                 color: isOutlined ? const Color(0xFF00CE68) : Colors.white,
               ),
             ),

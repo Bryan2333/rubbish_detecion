@@ -1,10 +1,10 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:rubbish_detection/pages/quiz_page/quiz_result_page.dart';
 import 'package:rubbish_detection/pages/quiz_page/quiz_vm.dart';
-import 'package:rubbish_detection/route.dart';
+import 'package:rubbish_detection/repository/data/quiz.dart';
 
 class QuizPage extends StatefulWidget {
   const QuizPage({super.key});
@@ -13,78 +13,100 @@ class QuizPage extends StatefulWidget {
   State<QuizPage> createState() => _QuizPageState();
 }
 
-class _QuizPageState extends State<QuizPage>
-    with SingleTickerProviderStateMixin {
-  int currentQuestionIndex = 0;
-  int? selectedOptionIndex;
+class _QuizPageState extends State<QuizPage> {
   int correctAnswers = 0;
-  double progress = 0;
+  final _quizViewModel = QuizViewModel();
+
   Timer? timer;
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late QuizViewModel _quizViewModel;
+
+  late ValueNotifier<double> _progressNotifier;
+  late ValueNotifier<Quiz?> _currentQuestionNotifier;
+  late ValueNotifier<int?> _selectedOptionIndexNotifier;
+  late ValueNotifier<int> _currentQuestionIndexNotifier;
 
   @override
   void initState() {
     super.initState();
-    _quizViewModel = QuizViewModel();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    _animationController.forward();
+    _progressNotifier = ValueNotifier(0);
+    _currentQuestionNotifier = ValueNotifier(null);
+    _selectedOptionIndexNotifier = ValueNotifier(null);
+    _currentQuestionIndexNotifier = ValueNotifier(0);
+
+    _currentQuestionIndexNotifier.addListener(() {
+      final currentIndex = _currentQuestionIndexNotifier.value;
+      if (currentIndex < _quizViewModel.quizList.length) {
+        _currentQuestionNotifier.value = _quizViewModel.quizList[currentIndex];
+      }
+    });
 
     _loadQuizData();
   }
 
   Future<void> _loadQuizData() async {
     await _quizViewModel.getQuiz();
+    if (_quizViewModel.quizList.isNotEmpty) {
+      _currentQuestionNotifier.value = _quizViewModel.quizList.first;
+    }
   }
 
   @override
   void dispose() {
     timer?.cancel();
-    _animationController.dispose();
+    _progressNotifier.dispose();
+    _currentQuestionNotifier.dispose();
+    _selectedOptionIndexNotifier.dispose();
+    _currentQuestionIndexNotifier.dispose();
     super.dispose();
   }
 
+  Color getOptionBackgroundColor(
+      bool showResult, bool isCorrect, bool isSelected) {
+    if (!showResult) return Colors.grey[100]!;
+    if (isCorrect) return const Color(0xFF00CE68).withOpacity(0.1);
+    if (isSelected) return Colors.red[100]!;
+    return Colors.grey[100]!;
+  }
+
+  Color getOptionBorderColor(bool showResult, bool isCorrect, bool isSelected) {
+    if (!showResult) return Colors.transparent;
+    if (isCorrect) return const Color(0xFF00CE68);
+    if (isSelected) return Colors.red;
+    return Colors.transparent;
+  }
+
   void startCountdown() {
-    const duration = Duration(milliseconds: 20); // 每 10ms 更新一次
-    const totalTime = 2000.0; // 总时间 2 秒
+    const duration = Duration(milliseconds: 20);
+    const totalTime = 2000.0;
     int elapsed = 0;
 
-    timer?.cancel(); // 确保之前的计时器被清除
+    timer?.cancel();
     timer = Timer.periodic(duration, (timer) {
-      setState(() {
-        elapsed += duration.inMilliseconds;
-        progress = elapsed / totalTime; // 从 0 增加到 1
-        if (elapsed >= totalTime) {
-          timer.cancel();
-          nextQuestion();
-        }
-      });
+      elapsed += duration.inMilliseconds;
+      _progressNotifier.value = elapsed / totalTime;
+      if (elapsed >= totalTime) {
+        timer.cancel();
+        nextQuestion();
+      }
     });
   }
 
   void nextQuestion() {
-    if (currentQuestionIndex < _quizViewModel.quizList.length - 1) {
-      setState(() {
-        currentQuestionIndex++;
-        selectedOptionIndex = null;
-        progress = 1.0; // 重置进度条
-      });
+    if (_currentQuestionIndexNotifier.value <
+        _quizViewModel.quizList.length - 1) {
+      _currentQuestionIndexNotifier.value++;
+      _selectedOptionIndexNotifier.value = null;
+      _progressNotifier.value = 0;
     } else {
-      // 如果是最后一题，跳转到结果页面
-      Navigator.pushReplacementNamed(
+      Navigator.pushReplacement(
         context,
-        RoutePath.quizResultPage,
-        arguments: {
-          "correctAnswers": correctAnswers,
-          "totalQuestions": _quizViewModel.quizList.length
-        },
+        MaterialPageRoute(
+          builder: (_) {
+            return QuizResultPage(
+              correctAnswers: correctAnswers,
+              totalQuestions: _quizViewModel.quizList.length,
+            );
+          },
+        ),
       );
     }
   }
@@ -94,314 +116,376 @@ class _QuizPageState extends State<QuizPage>
     return ChangeNotifierProvider(
       create: (context) => _quizViewModel,
       child: Scaffold(
-        backgroundColor: const Color(0xFF00CE68),
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: const Color(0xFF00CE68),
-          centerTitle: true,
-          title: Text(
-            "垃圾分类测验",
-            style: TextStyle(
-              fontSize: 24.sp,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios, size: 20.r, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
+        backgroundColor: Colors.white,
+        appBar: _buildAppBar(),
         body: Consumer<QuizViewModel>(
           builder: (context, vm, child) {
-            if (vm.quizList.isEmpty) {
-              return const Center(
-                child: CircularProgressIndicator(),
+            if (vm.isLoading == true) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (vm.isLoading == false && vm.quizList.isEmpty) {
+              return _buildLoadFailed();
+            } else {
+              return SafeArea(
+                child: Column(
+                  children: [_buildHeader(vm.quizList.length), _buildContent()],
+                ),
               );
             }
-
-            final currentQuestion = vm.quizList[currentQuestionIndex];
-            final question = currentQuestion.question ?? "";
-            final options = [
-              currentQuestion.optionA!,
-              currentQuestion.optionB!,
-              currentQuestion.optionC!,
-              currentQuestion.optionD!
-            ];
-            final correctAnswerIndex = currentQuestion.correctAnswerIndex ?? 0;
-
-            return SafeArea(
-              child: Column(
-                children: [
-                  // 顶部信息区域
-                  Container(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
-                    child: Row(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "每日趣味三题",
-                              style: TextStyle(
-                                fontSize: 26.sp,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-                            Text(
-                              "测试你的垃圾分类知识",
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                color: Colors.white.withOpacity(0.8),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: EdgeInsets.all(12.r),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                "${currentQuestionIndex + 1}/${vm.quizList.length}",
-                                style: TextStyle(
-                                  fontSize: 18.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              Icon(
-                                Icons.arrow_forward_ios,
-                                color: Colors.white,
-                                size: 16.r,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // 主要内容区域
-                  Expanded(
-                    child: Container(
-                      margin: EdgeInsets.all(24.w),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24.r),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 20.r,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                padding: EdgeInsets.all(24.r),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // 题目序号
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 12.w,
-                                        vertical: 6.h,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF00CE68)
-                                            .withOpacity(0.1),
-                                        borderRadius:
-                                            BorderRadius.circular(20.r),
-                                      ),
-                                      child: Text(
-                                        "问题 ${currentQuestionIndex + 1}",
-                                        style: TextStyle(
-                                          fontSize: 14.sp,
-                                          color: const Color(0xFF00CE68),
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(height: 16.h),
-                                    // 题目内容
-                                    Text(
-                                      question,
-                                      style: TextStyle(
-                                        fontSize: 20.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    SizedBox(height: 32.h),
-
-                                    // 选项列表
-                                    Expanded(
-                                      child: ListView(
-                                        children: _buildOptions(
-                                          options: options,
-                                          correctAnswerIndex:
-                                              correctAnswerIndex,
-                                        ),
-                                      ),
-                                    ),
-
-                                    // 倒计时进度条
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8.r),
-                                      child: _buildCountdownBar(),
-                                    ),
-                                    SizedBox(height: 30.h)
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
           },
         ),
       ),
     );
   }
 
-  Widget _buildCountdownBar() {
-    return SizedBox(
-      height: 8.h,
-      child: selectedOptionIndex != null
-          ? LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.grey[200],
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                Color(0xFF00CE68),
-              ),
-            )
-          : const SizedBox(),
+  AppBar _buildAppBar() {
+    return AppBar(
+      elevation: 0,
+      backgroundColor: Colors.white,
+      centerTitle: true,
+      title: Text(
+        "垃圾分类测验",
+        style: TextStyle(
+          fontSize: 24.sp,
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
+        ),
+      ),
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios, size: 20.r, color: Colors.black),
+        onPressed: () => Navigator.pop(context),
+      ),
     );
   }
 
-  List<Widget> _buildOptions({
-    required List<String> options,
+  Widget _buildLoadFailed() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            color: Colors.red,
+            size: 60.r,
+          ),
+          SizedBox(height: 16.h),
+          Text(
+            "加载题目失败，请检查您的网络连接。",
+            style: TextStyle(
+              fontSize: 18.sp,
+              color: Colors.black,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 24.h),
+          ElevatedButton(
+            onPressed: () async {
+              await _loadQuizData();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00CE68),
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+            ),
+            child: Text(
+              "重试",
+              style: TextStyle(fontSize: 16.sp, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(int quizLength) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+      child: Row(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "每日趣味三题",
+                style: TextStyle(
+                  fontSize: 26.sp,
+                  color: Colors.black,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                "测试你的垃圾分类知识",
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: Colors.black54,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Container(
+            padding: EdgeInsets.all(12.r),
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            child: Row(
+              children: [
+                ValueListenableBuilder(
+                  valueListenable: _currentQuestionIndexNotifier,
+                  builder: (context, currIdx, child) {
+                    return Text(
+                      "${currIdx + 1}/$quizLength",
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(width: 5.w),
+                Icon(Icons.arrow_forward_ios, color: Colors.black, size: 16.r),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    return Expanded(
+      child: Container(
+        margin: EdgeInsets.all(24.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20.r,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: Container(
+                padding: EdgeInsets.all(24.r),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 题目编号
+                    _buildQuestionNumber(),
+                    // 题目内容
+                    _buildQuestionContent(),
+                    // 题目选项
+                    _buildOptionList(),
+                    // 倒计时进度条
+                    _buildCountdownBar(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuestionNumber() {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: const Color(0xFF00CE68).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      child: ValueListenableBuilder(
+        valueListenable: _currentQuestionIndexNotifier,
+        builder: (context, currentIdx, child) {
+          return Text(
+            "问题 ${currentIdx + 1}",
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: const Color(0xFF00CE68),
+              fontWeight: FontWeight.bold,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildQuestionContent() {
+    return ValueListenableBuilder(
+      valueListenable: _currentQuestionNotifier,
+      builder: (context, currQuiz, child) {
+        return Container(
+          margin: EdgeInsets.only(bottom: 32.h),
+          child: Text(
+            currQuiz?.question ?? "",
+            style: TextStyle(
+              fontSize: 20.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildOptionList() {
+    return ValueListenableBuilder(
+      valueListenable: _currentQuestionNotifier,
+      builder: (context, currQuiz, child) {
+        final options = [
+          currQuiz?.optionA ?? "",
+          currQuiz?.optionB ?? "",
+          currQuiz?.optionC ?? "",
+          currQuiz?.optionD ?? ""
+        ];
+        final correctAnswerIndex = currQuiz?.correctAnswerIndex ?? -1;
+        return Expanded(
+          child: ListView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: options.length,
+            itemBuilder: (context, index) {
+              return _buildOption(
+                option: MapEntry(index, options[index]),
+                correctAnswerIndex: correctAnswerIndex,
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildOption({
+    required MapEntry<int, String> option,
     required int correctAnswerIndex,
   }) {
-    return options.asMap().entries.map((entry) {
-      final index = entry.key;
-      final option = entry.value;
-      final bool isSelected = selectedOptionIndex == index;
-      final bool isCorrect = index == correctAnswerIndex;
-      final bool showResult = selectedOptionIndex != null;
+    return ValueListenableBuilder(
+      valueListenable: _selectedOptionIndexNotifier,
+      builder: (context, selectedIdx, child) {
+        final optIdx = option.key;
+        final optContent = option.value;
+        final isSelected = optIdx == selectedIdx;
+        final isCorrect = optIdx == correctAnswerIndex;
+        final showResult = selectedIdx != null;
 
-      Color getBackgroundColor() {
-        if (!showResult) return Colors.grey[100]!;
-        if (isCorrect) return const Color(0xFF00CE68).withOpacity(0.1);
-        if (isSelected) return Colors.red[100]!;
-        return Colors.grey[100]!;
-      }
-
-      Color getBorderColor() {
-        if (!showResult) return Colors.transparent;
-        if (isCorrect) return const Color(0xFF00CE68);
-        if (isSelected) return Colors.red;
-        return Colors.transparent;
-      }
-
-      return AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        margin: EdgeInsets.only(bottom: 16.h),
-        decoration: BoxDecoration(
-          color: getBackgroundColor(),
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(
-            color: getBorderColor(),
-            width: 2,
-          ),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: selectedOptionIndex == null
-                ? () {
-                    setState(() {
-                      selectedOptionIndex = index;
-                      if (index == correctAnswerIndex) correctAnswers++;
-                      startCountdown();
-                    });
-                  }
-                : null,
+        return Container(
+          margin: EdgeInsets.only(bottom: 16.h),
+          decoration: BoxDecoration(
+            color: getOptionBackgroundColor(showResult, isCorrect, isSelected),
             borderRadius: BorderRadius.circular(16.r),
-            child: Container(
-              padding: EdgeInsets.all(16.r),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32.w,
-                    height: 32.w,
-                    decoration: BoxDecoration(
-                      color: showResult
-                          ? (isCorrect
-                              ? const Color(0xFF00CE68)
-                              : isSelected
-                                  ? Colors.red
-                                  : Colors.grey[300])
-                          : Colors.grey[300],
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        String.fromCharCode(65 + index), // A, B, C, D...
-                        style: TextStyle(
-                          color: showResult
-                              ? (isCorrect || isSelected
-                                  ? Colors.white
-                                  : Colors.black54)
-                              : Colors.black54,
-                          fontWeight: FontWeight.bold,
+            border: Border.all(
+              color: getOptionBorderColor(showResult, isCorrect, isSelected),
+              width: 2.r,
+            ),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: selectedIdx == null
+                  ? () {
+                      _selectedOptionIndexNotifier.value = optIdx;
+                      if (optIdx == correctAnswerIndex) correctAnswers++;
+                      startCountdown();
+                    }
+                  : null,
+              borderRadius: BorderRadius.circular(16.r),
+              child: Container(
+                padding: EdgeInsets.all(16.r),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32.w,
+                      height: 32.w,
+                      margin: EdgeInsets.only(right: 16.w),
+                      decoration: BoxDecoration(
+                        color: showResult
+                            ? (isCorrect
+                                ? const Color(0xFF00CE68)
+                                : isSelected
+                                    ? Colors.red
+                                    : Colors.grey[300])
+                            : Colors.grey[300],
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          String.fromCharCode(65 + optIdx), // A, B, C, D
+                          style: TextStyle(
+                            color: showResult
+                                ? (isCorrect || isSelected
+                                    ? Colors.white
+                                    : Colors.black54)
+                                : Colors.black54,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: 16.w),
-                  Expanded(
-                    child: Text(
-                      option,
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        color: Colors.black87,
-                        fontWeight: showResult && (isCorrect || isSelected)
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                    Expanded(
+                      child: Text(
+                        optContent,
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: showResult && (isCorrect || isSelected)
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
                       ),
                     ),
-                  ),
-                  if (showResult && (isCorrect || isSelected))
-                    Icon(
-                      isCorrect ? Icons.check_circle : Icons.cancel,
-                      color: isCorrect ? const Color(0xFF00CE68) : Colors.red,
-                      size: 24.r,
+                    Offstage(
+                      offstage: !(showResult && (isCorrect || isSelected)),
+                      child: Icon(
+                        isCorrect ? Icons.check_circle : Icons.cancel,
+                        color: isCorrect ? const Color(0xFF00CE68) : Colors.red,
+                        size: 24.r,
+                      ),
                     ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      );
-    }).toList();
+        );
+      },
+    );
+  }
+
+  Widget _buildCountdownBar() {
+    return ValueListenableBuilder(
+      valueListenable: _selectedOptionIndexNotifier,
+      builder: (context, selectedOptIdx, child) {
+        return Offstage(
+          offstage: selectedOptIdx == null,
+          child: Container(
+            margin: EdgeInsets.symmetric(vertical: 30.h),
+            height: 8.h,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8.r),
+              child: ValueListenableBuilder(
+                valueListenable: _progressNotifier,
+                builder: (context, progress, child) {
+                  return LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: Colors.grey[200],
+                    color: const Color(0xFF00CE68),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
