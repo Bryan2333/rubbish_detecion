@@ -1,8 +1,10 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+import 'package:rubbish_detection/pages/recycle_page/address_card.dart';
 import 'package:rubbish_detection/pages/recycle_page/order_form_page.dart';
+import 'package:rubbish_detection/pages/recycle_page/recycle_vm.dart';
+import 'package:rubbish_detection/pages/recycle_page/waste_bag_card.dart';
 
 class RecyclingPage extends StatefulWidget {
   const RecyclingPage({super.key});
@@ -11,271 +13,234 @@ class RecyclingPage extends StatefulWidget {
   State<RecyclingPage> createState() => _RecyclingPageState();
 }
 
-class _RecyclingPageState extends State<RecyclingPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  // Tab标签数据
-  final List<Map<String, dynamic>> _tabs = [
-    {
-      'text': '创建订单',
-      'icon': Icons.add_circle_outline,
-      'count': 0,
-    },
-    {
-      'text': '服务中',
-      'icon': Icons.pending_actions,
-      'count': 1,
-    },
-    {
-      'text': '已完成',
-      'icon': Icons.check_circle_outline,
-      'count': 1,
-    },
-    {
-      'text': '所有订单',
-      'icon': Icons.list_alt,
-      'count': 2,
-    },
-  ];
+class _RecyclingPageState extends State<RecyclingPage> {
+  final _recycleViewModel = RecycleViewModel();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) {
-        setState(() {});
-      }
-    });
+    _loadOrders();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  Future<void> _loadOrders() async {
+    await _recycleViewModel.getRecentOrders();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        title: Text(
-          "垃圾上门回收",
-          style: TextStyle(
-            fontSize: 24.sp,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            size: 20.r,
-            color: Colors.black87,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Column(
-        children: [
-          // 自定义Tab栏
-          Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                SizedBox(height: 8.h),
-                // Tab按钮组
-                Container(
-                  height: 72.h,
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  child: ValueListenableBuilder<double>(
-                    valueListenable: _tabController.animation!,
-                    builder: (context, value, child) {
-                      return Row(
-                        children: List.generate(_tabs.length, (index) {
-                          bool isSelected = _tabController.index == index;
-                          return Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                _tabController.animateTo(index);
+    return ChangeNotifierProvider(
+      create: (_) => _recycleViewModel,
+      child: Scaffold(
+        appBar: _buildAppBar(),
+        body: SafeArea(
+          child: Container(
+            padding: EdgeInsets.all(16.r),
+            child: Consumer<RecycleViewModel>(
+              builder: (context, vm, child) {
+                if (vm.isLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF00CE68),
+                    ),
+                  );
+                } else if (vm.isLoading == false && vm.orders.isEmpty) {
+                  return _buildLoadFailed();
+                } else {
+                  final processingOrders = vm.orders
+                      .where((order) =>
+                          order.orderStatus == 0 || order.orderStatus == 1)
+                      .toList();
+                  final completedOrders = vm.orders
+                      .where((order) => order.orderStatus == 2)
+                      .toList();
 
-                                log(_tabController.index.toString());
-                                log(index.toString());
-                              },
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                margin: EdgeInsets.symmetric(
-                                  horizontal: 4.w,
-                                  vertical: 8.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? const Color(0xFF00CE68).withOpacity(0.1)
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(12.r),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? const Color(0xFF00CE68)
-                                        : Colors.transparent,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          _tabs[index]['icon'],
-                                          size: 20.r,
-                                          color: isSelected
-                                              ? const Color(0xFF00CE68)
-                                              : Colors.grey[600],
-                                        ),
-                                        if (_tabs[index]['count'] > 0) ...[
-                                          SizedBox(width: 4.w),
-                                          Container(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 4.w,
-                                              vertical: 2.h,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: isSelected
-                                                  ? const Color(0xFF00CE68)
-                                                  : Colors.grey[400],
-                                              borderRadius:
-                                                  BorderRadius.circular(10.r),
-                                            ),
-                                            child: Text(
-                                              '${_tabs[index]['count']}',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 10.sp,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                    SizedBox(height: 4.h),
-                                    Text(
-                                      _tabs[index]['text'],
-                                      style: TextStyle(
-                                        color: isSelected
-                                            ? const Color(0xFF00CE68)
-                                            : Colors.grey[600],
-                                        fontSize: 12.sp,
-                                        fontWeight: isSelected
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
-                      );
-                    },
-                  ),
-                ),
-                SizedBox(height: 8.h),
-                // 底部分割线
-                Container(
-                  height: 8.h,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        offset: const Offset(0, 2),
-                        blurRadius: 5,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                  return SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        // 服务中订单卡片
+                        _buildGroupCard(
+                          title: "服务中订单",
+                          icon: Icons.pending_actions,
+                          orders: processingOrders,
+                          onTap: () {},
+                        ),
+                        SizedBox(height: 24.h),
+                        // 已完成订单卡片
+                        _buildGroupCard(
+                          title: "已完成订单",
+                          icon: Icons.check_circle_outline,
+                          orders: completedOrders,
+                          onTap: () {},
+                        ),
+                        SizedBox(height: 24.h),
+                        // 所有订单卡片
+                        _buildGroupCard(
+                          title: "全部订单",
+                          icon: Icons.list_alt,
+                          orders: vm.orders,
+                          onTap: () {},
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              },
             ),
           ),
-          // Tab内容区域
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // 创建订单页面
-                const OrderFormPage(),
-                // 服务中订单页面
-                OrdersPage(
-                  orderType: "服务中订单",
-                  orders: sampleOngoingOrders,
-                ),
-                // 已完成订单页面
-                OrdersPage(
-                  orderType: "已完成订单",
-                  orders: sampleCompletedOrders,
-                ),
-                // 所有订单页面
-                OrdersPage(
-                  orderType: "所有订单",
-                  orders: allOrders,
-                ),
-              ],
+        ),
+      ),
+    );
+  }
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      title: Text(
+        "垃圾上门回收",
+        style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold),
+      ),
+      centerTitle: true,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios, size: 20.r),
+        onPressed: () => Navigator.pop(context),
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(Icons.add_outlined, size: 24.r),
+          onPressed: () {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const OrderFormPage()));
+          },
+        )
+      ],
+    );
+  }
+
+  // 加载失败提示
+  Widget _buildLoadFailed() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            color: Colors.red,
+            size: 60.r,
+          ),
+          SizedBox(height: 16.h),
+          Text(
+            "加载订单数据失败，请检查您的网络连接。",
+            style: TextStyle(
+              fontSize: 18.sp,
+              color: Colors.black,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 24.h),
+          ElevatedButton(
+            onPressed: () async {
+              await _loadOrders();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00CE68),
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+            ),
+            child: Text(
+              "重试",
+              style: TextStyle(fontSize: 16.sp, color: Colors.white),
             ),
           ),
         ],
       ),
     );
   }
-}
 
-// OrdersPage Widget的美化建议
-class OrdersPage extends StatelessWidget {
-  final String orderType;
-  final List<Map<String, String>> orders;
+  // 订单卡片
+  Widget _buildGroupCard({
+    required String title,
+    required IconData icon,
+    required List<Order> orders,
+    required VoidCallback onTap,
+  }) {
+    final bool isProcessingOrders = title == "服务中订单";
 
-  const OrdersPage({
-    super.key,
-    required this.orderType,
-    required this.orders,
-  });
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey[200]!,
+            blurRadius: 10.r,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // 标题栏
+          GestureDetector(
+            onTap: onTap,
+            child: Container(
+              padding: EdgeInsets.all(16.r),
+              child: Row(
+                children: [
+                  Icon(
+                    icon,
+                    size: 24.r,
+                    color: const Color(0xFF00CE68),
+                  ),
+                  SizedBox(width: 12.w),
+                  Text(
+                    title,
+                    style: TextStyle(fontSize: 16.sp),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16.r,
+                    color: Colors.grey[400],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // 分隔线
+          Divider(height: 1.h, color: Colors.grey[100]),
+          if (!isProcessingOrders) _buildPreviewHeader(),
+          if (orders.isEmpty)
+            _buildEmptyState()
+          else
+            ...orders.asMap().entries.map((entry) {
+              final index = entry.key;
+              final order = entry.value;
+              final isLast = index == orders.length - 1;
 
-  @override
-  Widget build(BuildContext context) {
-    return orders.isEmpty
-        ? _buildEmptyState()
-        : ListView.builder(
-            padding: EdgeInsets.all(16.r),
-            itemCount: orders.length,
-            itemBuilder: (context, index) {
-              return _buildOrderCard(orders[index]);
-            },
-          );
+              return _buildOrderPreviewItem(order, showBorder: !isLast);
+            })
+        ],
+      ),
+    );
   }
 
+  // 空状态提示
   Widget _buildEmptyState() {
-    return Center(
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 24.h),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.inbox_outlined,
-            size: 64.r,
+            size: 48.r,
             color: Colors.grey[400],
           ),
-          SizedBox(height: 16.h),
+          SizedBox(height: 12.h),
           Text(
-            "暂无订单",
+            "暂时没有相关订单",
             style: TextStyle(
-              fontSize: 16.sp,
+              fontSize: 14.sp,
               color: Colors.grey[600],
             ),
           ),
@@ -284,122 +249,187 @@ class OrdersPage extends StatelessWidget {
     );
   }
 
-  Widget _buildOrderCard(Map<String, String> order) {
+  // 预览说明
+  Widget _buildPreviewHeader() {
     return Container(
-      margin: EdgeInsets.only(bottom: 16.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+        color: Colors.grey[50],
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[100]!, width: 1.h),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.access_time, size: 16.r, color: Colors.grey[600]),
+          SizedBox(width: 8.w),
+          Text(
+            "最近一周的订单",
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: Colors.grey[600],
+            ),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            // TODO: 处理订单点击事件
-          },
-          borderRadius: BorderRadius.circular(16.r),
-          child: Padding(
-            padding: EdgeInsets.all(16.r),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.recycling,
-                      color: const Color(0xFF00CE68),
-                      size: 24.r,
-                    ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: Text(
-                        order['title'] ?? '',
-                        style: TextStyle(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      color: Colors.grey[400],
-                      size: 16.r,
-                    ),
-                  ],
+    );
+  }
+
+  // 订单预览项
+  Widget _buildOrderPreviewItem(Order order, {bool showBorder = true}) {
+    return Container(
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        border: showBorder
+            ? Border(
+                bottom: BorderSide(color: Colors.grey[200]!, width: 1.h),
+              )
+            : null,
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              // 左侧订单信息
+              Text(
+                order.orderDate.replaceAll("-", "/"),
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: Colors.grey[600],
                 ),
-                SizedBox(height: 16.h),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.access_time,
-                      color: Colors.grey[600],
-                      size: 16.r,
-                    ),
-                    SizedBox(width: 8.w),
-                    Text(
-                      order['time'] ?? '',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
+                overflow: TextOverflow.ellipsis,
+              ),
+              const Spacer(),
+              // 右侧状态
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: _getOrderStatusBgColor(order.orderStatus),
+                  borderRadius: BorderRadius.circular(4.r),
                 ),
-                SizedBox(height: 8.h),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      color: Colors.grey[600],
-                      size: 16.r,
-                    ),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Text(
-                        order['address'] ?? '',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  _getOrderStatusText(order.orderStatus),
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: _getOrderStatusColor(order.orderStatus),
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ),
+          SizedBox(height: 12.h),
+          // 废弃物信息
+          _buildInfoRow(
+            Icons.delete_outline,
+            "${order.waste.type} - ${order.waste.name}",
+            weight: "${order.waste.weight}${order.waste.unit}",
+          ),
+          SizedBox(height: 8.h),
+          // 地址信息
+          _buildInfoRow(
+            Icons.location_on_outlined,
+            order.address.detail,
+          ),
+        ],
       ),
     );
   }
+
+  // 信息行组件
+  Widget _buildInfoRow(IconData icon, String text, {String? weight}) {
+    return Row(
+      children: [
+        Icon(icon, size: 16.r, color: Colors.grey[600]),
+        SizedBox(width: 8.w),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 14.sp,
+            color: Colors.grey[700],
+          ),
+        ),
+        const Spacer(),
+        if (weight != null)
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.h),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(3.r),
+            ),
+            child: Text(
+              weight,
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: Colors.grey[600],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Color _getOrderStatusBgColor(int status) {
+    return switch (status) {
+      0 => const Color(0xFFFFF3E0),
+      1 => const Color(0xFFE8F5E9),
+      2 => const Color(0xFFE3F2FD),
+      _ => Colors.grey[100]!
+    };
+  }
+
+  String _getOrderStatusText(int status) {
+    return switch (status) {
+      0 => "待处理",
+      1 => "处理中",
+      2 => "已完成",
+      3 => "已取消",
+      _ => "未知状态",
+    };
+  }
+
+  Color _getOrderStatusColor(int status) {
+    return switch (status) {
+      0 => Colors.orange,
+      1 => const Color(0xFF00CE68),
+      2 => Colors.blue,
+      _ => Colors.grey,
+    };
+  }
 }
 
-// 示例订单数据
-final List<Map<String, String>> sampleOngoingOrders = [
-  {
-    "title": "废旧家具回收",
-    "time": "2024-12-10 10:00",
-    "address": "北京市朝阳区XX路XX号",
-  },
-];
+class Order {
+  final int id;
+  final Address address;
+  final Waste waste;
+  final String orderDate;
+  final int orderStatus; // 0 - 未完成，1 - 处理中, 2 - 已完成, 3 - 已取消
 
-final sampleCompletedOrders = [
-  {
-    "title": "电子垃圾回收",
-    "time": "2024-12-08 14:00",
-    "address": "北京市海淀区XX小区",
-  },
-];
+  Order(
+      {required this.id,
+      required this.address,
+      required this.waste,
+      required this.orderDate,
+      required this.orderStatus});
 
-final allOrders = [
-  ...sampleOngoingOrders,
-  ...sampleCompletedOrders,
-];
+  // 从JSON创建Order实例
+  factory Order.fromJson(Map<String, dynamic> json) {
+    return Order(
+      id: json['id'] ?? 0,
+      address: Address.fromJson(json['address']),
+      waste: Waste.fromJson(json['waste']),
+      orderDate: json['orderDate'] ?? '',
+      orderStatus: json['orderStatus'] ?? 0,
+    );
+  }
+
+  // 将Order实例转换为JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'address': address.toJson(),
+      'waste': waste.toJson(),
+      'orderDate': orderDate,
+      'orderStatus': orderStatus,
+    };
+  }
+}
