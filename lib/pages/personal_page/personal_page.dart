@@ -54,7 +54,7 @@ class _PersonalPageState extends State<PersonalPage> {
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 0,
             blurRadius: 15.r,
             offset: const Offset(0, 5),
@@ -85,7 +85,7 @@ class _PersonalPageState extends State<PersonalPage> {
         border: Border.all(color: Colors.white, width: 4.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8.r,
             spreadRadius: 2.r,
           ),
@@ -218,7 +218,7 @@ class _PersonalPageState extends State<PersonalPage> {
         borderRadius: BorderRadius.circular(15.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 0.r,
             blurRadius: 15.r,
             offset: const Offset(0, 5),

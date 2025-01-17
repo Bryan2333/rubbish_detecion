@@ -251,7 +251,7 @@ class _SettingsPageState extends State<SettingsPage> {
         gradient: LinearGradient(
           colors: [
             const Color(0xFF04C264),
-            const Color(0xFF04C264).withOpacity(0.8),
+            const Color(0xFF04C264).withValues(alpha: 0.8),
           ],
         ),
       ),

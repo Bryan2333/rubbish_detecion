@@ -80,7 +80,7 @@ class _QuizResultPageState extends State<QuizResultPage>
                     borderRadius: BorderRadius.circular(24.r),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 20.r,
                         spreadRadius: 5.r,
                         offset: const Offset(0, 3),
@@ -137,7 +137,7 @@ class _QuizResultPageState extends State<QuizResultPage>
         margin: EdgeInsets.only(bottom: 24.h),
         padding: EdgeInsets.all(16.r),
         decoration: BoxDecoration(
-          color: const Color(0xFF00CE68).withOpacity(0.1),
+          color: const Color(0xFF00CE68).withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(
@@ -282,7 +282,7 @@ class _QuizResultPageState extends State<QuizResultPage>
                 ? null
                 : [
                     BoxShadow(
-                      color: const Color(0xFF00CE68).withOpacity(0.3),
+                      color: const Color(0xFF00CE68).withValues(alpha: 0.3),
                       blurRadius: 12.r,
                       offset: const Offset(0, 4),
                     ),

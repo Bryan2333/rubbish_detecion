@@ -98,7 +98,7 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10.r,
             offset: const Offset(0, 2),
           ),
@@ -171,7 +171,7 @@ class _HomePageState extends State<HomePage> {
                 margin: EdgeInsets.only(bottom: 12.h),
                 builder: DotSwiperPaginationBuilder(
                   activeColor: const Color(0xFF00CE68),
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   size: 8.r,
                   activeSize: 8.r,
                 ),
@@ -205,7 +205,7 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -282,7 +282,7 @@ class _HomePageState extends State<HomePage> {
           Container(
             padding: EdgeInsets.all(12.r),
             decoration: BoxDecoration(
-              color: const Color(0xFF00CE68).withOpacity(0.1),
+              color: const Color(0xFF00CE68).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Image.asset(
@@ -312,7 +312,7 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10.r,
             offset: const Offset(0, 2),
           ),
@@ -389,7 +389,7 @@ class _HomePageState extends State<HomePage> {
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),

@@ -159,7 +159,7 @@ class _RecordPageState extends State<RecordPage>
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: const Color(0xFF00CE68).withOpacity(0.1),
+        color: const Color(0xFF00CE68).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20.r),
       ),
       child: Text(
@@ -209,7 +209,7 @@ class _RecordPageState extends State<RecordPage>
                               color: (isRecording
                                       ? const Color(0xFFFF3197)
                                       : const Color(0xFF00CE68))
-                                  .withOpacity(0.3),
+                                  .withValues(alpha: 0.3),
                               spreadRadius: 4.r,
                               blurRadius: 15.r,
                               offset: const Offset(0, 3),

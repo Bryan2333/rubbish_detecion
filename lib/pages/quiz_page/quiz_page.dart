@@ -62,7 +62,7 @@ class _QuizPageState extends State<QuizPage> {
   Color getOptionBackgroundColor(
       bool showResult, bool isCorrect, bool isSelected) {
     if (!showResult) return Colors.grey[100]!;
-    if (isCorrect) return const Color(0xFF00CE68).withOpacity(0.1);
+    if (isCorrect) return const Color(0xFF00CE68).withValues(alpha: 0.1);
     if (isSelected) return Colors.red[100]!;
     return Colors.grey[100]!;
   }
@@ -227,7 +227,7 @@ class _QuizPageState extends State<QuizPage> {
           Container(
             padding: EdgeInsets.all(12.r),
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.3),
+              color: Colors.grey.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(20.r),
             ),
             child: Row(
@@ -264,7 +264,7 @@ class _QuizPageState extends State<QuizPage> {
           borderRadius: BorderRadius.circular(24.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20.r,
               offset: const Offset(0, 1),
             ),
@@ -301,7 +301,7 @@ class _QuizPageState extends State<QuizPage> {
       margin: EdgeInsets.only(bottom: 16.h),
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
       decoration: BoxDecoration(
-        color: const Color(0xFF00CE68).withOpacity(0.1),
+        color: const Color(0xFF00CE68).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20.r),
       ),
       child: ValueListenableBuilder(

@@ -178,7 +178,7 @@ class _CollectionPageState extends State<CollectionPage>
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10.r,
             offset: const Offset(0, 2),
           ),
@@ -248,7 +248,7 @@ class _CollectionPageState extends State<CollectionPage>
                         ),
                         decoration: BoxDecoration(
                           color: _getTypeColor(collection.rubbishType)
-                              .withOpacity(0.15),
+                              .withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12.r),
                         ),
                         child: Text(

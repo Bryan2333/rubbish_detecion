@@ -128,7 +128,7 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
         color: _themeColor,
         boxShadow: [
           BoxShadow(
-            color: _themeColor.withOpacity(0.3),
+            color: _themeColor.withValues(alpha: 0.3),
             blurRadius: 15.r,
             offset: const Offset(0, 5),
           ),
@@ -140,7 +140,7 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
           Container(
             padding: EdgeInsets.all(16.r),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20.r),
             ),
             child: Image.asset(
@@ -166,7 +166,7 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
                 Text(
                   desc,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 16.sp,
                     height: 1.5.h,
                   ),
@@ -191,7 +191,7 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 10.r,
             spreadRadius: 0,
             offset: const Offset(0, 2),

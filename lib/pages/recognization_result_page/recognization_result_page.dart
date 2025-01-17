@@ -57,7 +57,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
     // TODO: 调用后端接口将识别结果添加到收藏
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: const Color(0xFF00CE68).withOpacity(0.8),
+        backgroundColor: const Color(0xFF00CE68).withValues(alpha: 0.8),
         content: Text(
           "已添加到识别收藏",
           style: TextStyle(fontSize: 16.sp, color: Colors.white),
@@ -168,7 +168,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
                 borderRadius: BorderRadius.circular(20.r),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Colors.grey.withValues(alpha: 0.1),
                     blurRadius: 15.r,
                     spreadRadius: 5.r,
                     offset: const Offset(0, 5),
@@ -395,7 +395,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF00CE68).withOpacity(0.3),
+              color: const Color(0xFF00CE68).withValues(alpha: 0.3),
               blurRadius: 15.r,
               spreadRadius: 1.r,
               offset: const Offset(0, 5),
