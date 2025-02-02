@@ -1,9 +1,10 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:rubbish_detection/pages/recycle_page/address_card.dart';
-import 'package:rubbish_detection/pages/recycle_page/order_status_page.dart';
-import 'package:rubbish_detection/pages/recycle_page/waste_bag_card.dart';
+import 'package:rubbish_detection/pages/recycle_page/recycle_page.dart';
+import 'package:rubbish_detection/pages/recycle_page/waste_card.dart';
 
 class OrderFormPage extends StatefulWidget {
   const OrderFormPage({super.key});
@@ -13,251 +14,210 @@ class OrderFormPage extends StatefulWidget {
 }
 
 class _OrderFormPageState extends State<OrderFormPage> {
-  final _wasteBags = [WasteBag(id: 1)];
-  double _totalPrice = 0.0;
-  late Address _address;
+  final _order = Order(address: Address(), waste: Waste(photos: []));
 
-  // 添加新废品袋
-  void _addWasteBag() {
-    setState(() {
-      _wasteBags.add(WasteBag(id: _wasteBags.length + 1));
-    });
+  final _wasteFormKey = GlobalKey<FormState>();
+  final _addressFormKey = GlobalKey<FormState>();
+
+  late ValueNotifier<double> _totalPrice;
+
+  @override
+  void initState() {
+    super.initState();
+    _totalPrice = ValueNotifier<double>(0);
+  }
+
+  @override
+  void dispose() {
+    _totalPrice.dispose();
+    super.dispose();
   }
 
   // 计算总价
   void _calculateTotal() {
-    setState(() {
-      _totalPrice =
-          _wasteBags.fold(0.0, (sum, bag) => sum + (bag.estimatedPrice ?? 0));
-    });
-  }
+    final weightInKg = (_order.waste.unit == "g")
+        ? (double.tryParse(_order.waste.weight ?? "") ?? 0) / 1000
+        : double.tryParse(_order.waste.weight ?? "") ?? 0;
 
-  void _removeWasteBag(int id) {
-    setState(() {
-      _wasteBags.removeWhere((bag) => id == bag.id);
-    });
-  }
+    const pricingRules = {
+      "0": [0.2, 0.3, 0.4], // 干垃圾
+      "1": [0.4, 0.6, 0.8], // 湿垃圾
+      "2": [1.5, 2.0, 2.5], // 可回收物
+      "3": [5.0, 6.0, 7.0], // 有害垃圾
+    };
 
-  void _updateAddress(Map<String, String?> json) {
-    _address = Address.fromJson(json);
-  }
-
-  Future<ImageSource?> _showPickerDialog(BuildContext context) async {
-    ImageSource? source;
-    await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('选择图片'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera),
-                title: const Text('拍照'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  source = ImageSource.camera;
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('从相册选择'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  source = ImageSource.gallery;
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-
-    return source;
-  }
-
-  // 选择照片
-  Future<void> _pickImage(int bagId) async {
-    final imageSource = await _showPickerDialog(context);
-    if (imageSource == null) {
-      return;
+    final prices = pricingRules[_order.waste.type];
+    if (prices != null && weightInKg > 0) {
+      if (weightInKg <= 20) {
+        _order.estimatedPrice = weightInKg * prices[0];
+      } else if (weightInKg <= 50) {
+        _order.estimatedPrice = weightInKg * prices[1];
+      } else {
+        _order.estimatedPrice = weightInKg * prices[2];
+      }
+    } else {
+      _order.estimatedPrice = 0;
     }
 
-    final picker = ImagePicker();
-    final pickedImage = await picker.pickImage(source: imageSource);
-
-    if (pickedImage == null) {
-      return;
-    }
-    setState(() {
-      _wasteBags
-          .firstWhere((bag) => bag.id == bagId)
-          .photos
-          .add(pickedImage.path);
-    });
+    _totalPrice.value = _order.estimatedPrice ?? 0;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Column(
+      appBar: _buildAppbar(),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildInfoBar(),
+            _buildFormSection(),
+            _buildBottomBar(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  AppBar _buildAppbar() {
+    return AppBar(
+      title: Text(
+        "创建新订单",
+        style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.w600),
+      ),
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios, size: 20.r),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+      centerTitle: true,
+    );
+  }
+
+  Widget _buildInfoBar() {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 5.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Expanded(
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                // AddressCard
-                SliverToBoxAdapter(
-                  child: AddressCard(
-                    isReadOnly: false,
-                    onAddressUpdate: _updateAddress,
-                  ),
-                ),
-                // WasteBags List
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final bag = _wasteBags[index];
-                      return WasteBagCard(
-                        bag: bag,
-                        isReadOnly: false,
-                        onCalculateTotal: _calculateTotal,
-                        onPickImage: _pickImage,
-                        removeWasteBag: _removeWasteBag,
-                      );
-                    },
-                    childCount: _wasteBags.length,
-                  ),
-                ),
-                // 底部间距
-                SliverPadding(padding: EdgeInsets.only(bottom: 100.h)),
-              ],
-            ),
-          ),
-          // 底部操作栏
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -5),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 总价和预约按钮
-                  Container(
-                    padding: EdgeInsets.all(16.r),
-                    child: Row(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "预估回收价",
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            SizedBox(height: 4.h),
-                            Row(
-                              children: [
-                                Text(
-                                  "¥",
-                                  style: TextStyle(
-                                    fontSize: 16.sp,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF00CE68),
-                                  ),
-                                ),
-                                Text(
-                                  _totalPrice.toStringAsFixed(2),
-                                  style: TextStyle(
-                                    fontSize: 24.sp,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF00CE68),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => OrderStatusPage(
-                                  wasteBags: _wasteBags,
-                                  totalPrice: _totalPrice,
-                                  address: _address,
-                                ),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF00CE68),
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 32.w,
-                              vertical: 12.h,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25.r),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            "立即预约",
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // 添加废品袋按钮
-                  Container(
-                    width: double.infinity,
-                    margin: EdgeInsets.all(16.r),
-                    child: ElevatedButton.icon(
-                      onPressed: _addWasteBag,
-                      icon: const Icon(Icons.add_circle_outline),
-                      label: Text(
-                        "添加废品袋",
-                        style: TextStyle(fontSize: 16.sp),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF00CE68),
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25.r),
-                          side: const BorderSide(
-                            color: Color(0xFF00CE68),
-                            width: 1,
-                          ),
-                        ),
-                        elevation: 0,
-                      ),
-                    ),
-                  ),
-                ],
+          Text("带有", style: TextStyle(color: Colors.grey[600])),
+          const Text(" * ", style: TextStyle(color: Colors.red)),
+          Text("为必填项", style: TextStyle(color: Colors.grey[600])),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormSection() {
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // AddressCard
+            SliverToBoxAdapter(
+              child: AddressCard(
+                formKey: _addressFormKey,
+                address: _order.address,
               ),
             ),
+            SliverToBoxAdapter(child: SizedBox(height: 16.h)),
+            // WasteBags List
+            SliverToBoxAdapter(
+              child: WasteCard(
+                formKey: _wasteFormKey,
+                waste: _order.waste,
+                onCalculateTotal: _calculateTotal,
+              ),
+            ),
+            SliverToBoxAdapter(child: SizedBox(height: 16.h)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey[200]!,
+            blurRadius: 2.r,
+            offset: const Offset(0, -5),
           ),
         ],
+      ),
+      child: Container(
+        padding: EdgeInsets.all(16.r),
+        child: Row(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "预估回收价",
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Row(
+                  children: [
+                    Text(
+                      "¥ ",
+                      style: TextStyle(
+                        fontSize: 24.sp,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF00CE68),
+                      ),
+                    ),
+                    ValueListenableBuilder(
+                      valueListenable: _totalPrice,
+                      builder: (context, totalPrice, child) {
+                        return Text(
+                          totalPrice.toStringAsFixed(2),
+                          style: TextStyle(
+                            fontSize: 24.sp,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF00CE68),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const Spacer(),
+            ElevatedButton(
+              onPressed: () {
+                // TODO: 向后端提交订单并跳转到订单详情页
+                final isAddressValid =
+                    _addressFormKey.currentState?.validate() ?? false;
+                final isWasteValid =
+                    _wasteFormKey.currentState?.validate() ?? false;
+                if (isAddressValid && isWasteValid) {
+                  log("${_order.address.toJson()}, ${_order.waste.toJson()}");
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00CE68),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25.r),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                "立即预约",
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
