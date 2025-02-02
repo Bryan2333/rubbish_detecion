@@ -1,410 +1,209 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rubbish_detection/pages/recycle_page/address_card.dart';
-import 'package:rubbish_detection/pages/recycle_page/waste_bag_card.dart';
+import 'package:rubbish_detection/pages/recycle_page/recycle_page.dart';
+import 'package:rubbish_detection/pages/recycle_page/waste_card.dart';
 
 class OrderStatusPage extends StatefulWidget {
   const OrderStatusPage({
     super.key,
-    required this.wasteBags,
-    required this.totalPrice,
-    required this.address,
+    required this.order,
   });
 
-  final List<WasteBag> wasteBags;
-  final Address address;
-  final double totalPrice;
+  final Order order;
 
   @override
   State<OrderStatusPage> createState() => _OrderStatusPageState();
 }
 
 class _OrderStatusPageState extends State<OrderStatusPage> {
-  final List<Map<String, dynamic>> _orderStatus = [
-    {
-      'status': '订单已提交',
-      'time': '2024-12-25 05:30:27',
-      'icon': Icons.check_circle,
-      'isCompleted': true,
-    },
-    {
-      'status': '等待回收员接单',
-      'time': '--:--',
-      'icon': Icons.person_search,
-      'isCompleted': false,
-    },
-    {
-      'status': '回收员已接单',
-      'time': '--:--',
-      'icon': Icons.person_outline,
-      'isCompleted': false,
-    },
-    {
-      'status': '正在上门回收',
-      'time': '--:--',
-      'icon': Icons.local_shipping_outlined,
-      'isCompleted': false,
-    },
-    {
-      'status': '回收完成',
-      'time': '--:--',
-      'icon': Icons.task_alt,
-      'isCompleted': false,
-    },
-  ];
+  String _getStatusText(int? status) {
+    return switch (status) {
+      0 => "待处理",
+      1 => "处理中",
+      2 => "已完成",
+      3 => "已取消",
+      _ => "未知状态",
+    };
+  }
+
+  Color _getStatusColor(int? status) {
+    return switch (status) {
+      0 => Colors.orange,
+      1 => const Color(0xFF00CE68),
+      2 => Colors.blue,
+      _ => Colors.grey,
+    };
+  }
+
+  Color _getOrderStatusBgColor(int? status) {
+    return switch (status) {
+      0 => const Color(0xFFFFF3E0),
+      1 => const Color(0xFFE8F5E9),
+      2 => const Color(0xFFE3F2FD),
+      _ => Colors.grey[100]!
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 0,
         title: Text(
-          "订单状态",
-          style: TextStyle(
-            fontSize: 20.sp,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
+          "订单详情",
+          style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, size: 20.r, color: Colors.black87),
+          icon: Icon(Icons.arrow_back_ios, size: 20.r),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
-        children: [
-          // 订单状态卡片
-          _buildStatusCard(),
-          // 订单详情
-          Expanded(
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                // 订单信息概览
-                SliverToBoxAdapter(
-                  child: _buildOrderOverview(),
-                ),
-                // 地址信息
-                SliverToBoxAdapter(
-                  child: AddressCard(
-                    address: widget.address,
-                    isReadOnly: true,
-                  ),
-                ),
-                // 废品袋列表
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final bag = widget.wasteBags[index];
-                      return WasteBagCard(
-                        bag: bag,
-                        isReadOnly: true,
-                      );
-                    },
-                    childCount: widget.wasteBags.length,
-                  ),
-                ),
-                // 底部间距
-                SliverPadding(padding: EdgeInsets.only(bottom: 16.h)),
-              ],
-            ),
-          ),
-        ],
-      ),
-      // 底部联系按钮
-      bottomNavigationBar: _buildBottomBar(),
-    );
-  }
-
-  Widget _buildStatusCard() {
-    return Container(
-      margin: EdgeInsets.all(16.r),
-      padding: EdgeInsets.all(16.r),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: List.generate(_orderStatus.length, (index) {
-          final status = _orderStatus[index];
-          final isLast = index == _orderStatus.length - 1;
-
-          return Row(
+      body: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        child: SingleChildScrollView(
+          child: Column(
             children: [
-              // 状态图标和连接线
-              Column(
-                children: [
-                  Container(
-                    width: 32.r,
-                    height: 32.r,
-                    decoration: BoxDecoration(
-                      color: status['isCompleted']
-                          ? const Color(0xFF00CE68)
-                          : Colors.grey[300],
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      status['icon'],
-                      color: Colors.white,
-                      size: 20.r,
-                    ),
-                  ),
-                  if (!isLast)
-                    Container(
-                      width: 2,
-                      height: 32.h,
-                      color: status['isCompleted']
-                          ? const Color(0xFF00CE68)
-                          : Colors.grey[300],
-                    ),
-                ],
-              ),
-              SizedBox(width: 12.w),
-              // 状态文字和时间
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      status['status'],
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: status['isCompleted']
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        color: status['isCompleted']
-                            ? Colors.black87
-                            : Colors.grey[600],
-                      ),
-                    ),
-                    if (status['time'] != '--:--') ...[
-                      SizedBox(height: 4.h),
-                      Text(
-                        status['time'],
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                    if (!isLast) SizedBox(height: 16.h),
-                  ],
-                ),
-              ),
+              // 订单信息概览
+              _buildOrderOverview(),
+              SizedBox(height: 16.h),
+              // 地址信息
+              AddressCard(address: widget.order.address, isReadOnly: true),
+              SizedBox(height: 16.h),
+              // 废品信息
+              WasteCard(waste: widget.order.waste, isReadOnly: true),
+              SizedBox(height: 16.h),
             ],
-          );
-        }),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildOrderOverview() {
+    return Column(
+      children: [_buildOverviewHeader(), _buildOverviewContent()],
+    );
+  }
+
+  Widget _buildOverviewHeader() {
     return Container(
-      margin: EdgeInsets.all(16.r),
       padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: const Color(0xFF00CE68).withValues(alpha: 0.15),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16.r),
+          topRight: Radius.circular(16.r),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Text(
-                "订单信息",
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 8.w,
-                  vertical: 4.h,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF00CE68).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Text(
-                  "待接单",
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: const Color(0xFF00CE68),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
+          Icon(
+            Icons.info_outline,
+            color: const Color(0xFF00CE68),
+            size: 24.r,
           ),
-          SizedBox(height: 16.h),
-          _buildInfoRow("订单编号", "2024122505302700001"),
-          _buildInfoRow("创建时间", "2024-12-25 05:30:27"),
-          _buildInfoRow("预估金额", "¥${widget.totalPrice.toStringAsFixed(2)}"),
-          _buildInfoRow("废品袋数量", "${widget.wasteBags.length}个"),
+          SizedBox(width: 8.w),
+          Text(
+            "订单信息",
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF00CE68),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildOverviewContent() {
     return Container(
-      padding: EdgeInsets.only(bottom: 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(16.r),
+          bottomRight: Radius.circular(16.r),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey[300]!,
+            offset: const Offset(0, 1),
+            blurRadius: 2.r,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildInfoRow(
+            label: "处理状态",
+            customWidget: true,
+            widget: Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+              decoration: BoxDecoration(
+                color: _getOrderStatusBgColor(widget.order.orderStatus),
+                borderRadius: BorderRadius.circular(4.r),
+              ),
+              child: Text(
+                _getStatusText(widget.order.orderStatus),
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: _getStatusColor(widget.order.orderStatus),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          _buildDivider(),
+          _buildInfoRow(label: "订单编号", value: "${widget.order.id}"),
+          _buildDivider(),
+          _buildInfoRow(label: "创建时间", value: "${widget.order.orderDate}"),
+          _buildDivider(),
+          _buildInfoRow(
+              label: "预估金额",
+              value: "${widget.order.estimatedPrice?.toStringAsFixed(2)} 元"),
+          _buildDivider(),
+          _buildInfoRow(
+              label: "实际金额",
+              value: (widget.order.actualPrice == null)
+                  ? "未知"
+                  : "${widget.order.actualPrice?.toStringAsFixed(2)} 元"),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(
+      {required String label,
+      String? value,
+      bool customWidget = false,
+      Widget? widget}) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 12.h),
       child: Row(
         children: [
           Text(
             label,
             style: TextStyle(
-              fontSize: 14.sp,
+              fontSize: 16.sp,
               color: Colors.grey[600],
             ),
           ),
           const Spacer(),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: Colors.black87,
-              fontWeight: FontWeight.w500,
+          if (customWidget)
+            widget!
+          else
+            Text(
+              value!,
+              style: TextStyle(fontSize: 16.sp),
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildBottomBar() {
-    return Container(
-      padding: EdgeInsets.all(16.r),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  // TODO: 实现客服联系功能
-                },
-                icon: const Icon(Icons.headset_mic_outlined),
-                label: const Text("联系客服"),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF00CE68),
-                  side: const BorderSide(color: Color(0xFF00CE68)),
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                ),
-              ),
-            ),
-            SizedBox(width: 16.w),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  // TODO: 实现回收员联系功能
-                },
-                icon: const Icon(Icons.phone_outlined),
-                label: const Text("联系回收员"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00CE68),
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  Widget _buildDivider() {
+    return Divider(height: 1.h, color: Colors.grey[200]);
   }
 }
-
-// class OrderStatusPage extends StatefulWidget {
-//   const OrderStatusPage(
-//       {super.key,
-//       required this.wasteBags,
-//       required this.totalPrice,
-//       required this.address});
-
-//   final List<WasteBag> wasteBags;
-//   final Address address;
-//   final double totalPrice;
-
-//   @override
-//   State<OrderStatusPage> createState() => _OrderStatusPageState();
-// }
-
-// class _OrderStatusPageState extends State<OrderStatusPage> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: SafeArea(
-//         child: Container(
-//           color: Colors.white,
-//           child: Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               Container(
-//                 margin: EdgeInsets.only(left: 16.w, top: 20.h),
-//                 child: Text(
-//                   "订单提交成功",
-//                   style: TextStyle(fontSize: 24.sp),
-//                 ),
-//               ),
-//               Expanded(
-//                 child: CustomScrollView(
-//                   slivers: [
-//                     // AddressCard
-//                     SliverToBoxAdapter(
-//                       child: AddressCard(
-//                         address: widget.address,
-                        
-//                         isReadOnly: true,
-//                       ),
-//                     ),
-//                     // WasteBagCards List
-//                     SliverList(
-//                       delegate: SliverChildBuilderDelegate(
-//                         (context, index) {
-//                           final bag = widget.wasteBags[index];
-//                           return WasteBagCard(
-//                             bag: bag,
-//                             isReadOnly: true,
-//                           );
-//                         },
-//                         childCount: widget.wasteBags.length,
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
