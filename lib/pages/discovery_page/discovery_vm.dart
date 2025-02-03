@@ -1,6 +1,6 @@
 import 'dart:developer';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:rubbish_detection/http/dio_instance.dart';
 import 'package:rubbish_detection/repository/data/news_article.dart';
 
 class DiscoveryViewModel with ChangeNotifier {
@@ -9,8 +9,6 @@ class DiscoveryViewModel with ChangeNotifier {
   var currentPage = 1;
 
   Future<void> getNews({required bool loadMore}) async {
-    final dio = Dio(BaseOptions(baseUrl: "http://10.133.73.147:1760"));
-
     if (loadMore) {
       currentPage++;
     } else {
@@ -20,22 +18,22 @@ class DiscoveryViewModel with ChangeNotifier {
     }
 
     try {
-      final res = await dio.get(
+      final res = await DioInstance.instance.get(
         "/api/news/page",
-        queryParameters: {"pageNum": currentPage},
+        params: {"pageNum": currentPage},
       );
 
       final model = NewsArticleModel.fromJson(res.data);
 
-      if (model.data?.list?.isEmpty == true) {
+      if (model.data?.isEmpty == true) {
         hasMore = false;
       } else {
-        newsList.addAll(model.data?.list ?? []);
+        newsList.addAll(model.data ?? []);
       }
-
-      notifyListeners();
     } catch (e) {
       log("Error fetching news: $e");
+    } finally {
+      notifyListeners();
     }
   }
 }
