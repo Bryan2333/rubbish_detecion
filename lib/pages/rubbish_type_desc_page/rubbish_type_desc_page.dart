@@ -88,7 +88,7 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 介绍卡片
-                      _buildDescCard(vm.desc?.name ?? "", vm.desc?.desc ?? ""),
+                      _buildDescCard(vm.desc?.name ?? "", vm.desc?.description ?? ""),
                       SizedBox(height: 24.h),
                       // 投放要求
                       _buildSection(

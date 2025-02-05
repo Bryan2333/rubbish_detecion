@@ -26,7 +26,7 @@ class RubbishTypeDesc {
   int? id;
   int? type;
   String? name;
-  String? desc;
+  String? description;
   List<String>? disposalAdvice;
   List<String>? handleMethods;
   List<String>? commonThings;
@@ -35,7 +35,7 @@ class RubbishTypeDesc {
       {this.id,
       this.type,
       this.name,
-      this.desc,
+      this.description,
       this.disposalAdvice,
       this.handleMethods,
       this.commonThings});
@@ -44,7 +44,7 @@ class RubbishTypeDesc {
     id = json['id'];
     type = json['type'];
     name = json['name'];
-    desc = json['desc'];
+    description = json['description'];
     disposalAdvice = json['disposalAdvice'].cast<String>();
     handleMethods = json['handleMethods'].cast<String>();
     commonThings = json['commonThings'].cast<String>();
@@ -55,7 +55,7 @@ class RubbishTypeDesc {
     data['id'] = id;
     data['type'] = type;
     data['name'] = name;
-    data['desc'] = desc;
+    data['description'] = description;
     data['disposalAdvice'] = disposalAdvice;
     data['handleMethods'] = handleMethods;
     data['commonThings'] = commonThings;
