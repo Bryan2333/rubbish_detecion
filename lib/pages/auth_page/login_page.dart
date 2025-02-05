@@ -1,8 +1,9 @@
-import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/auth_page/forgot_password_page.dart';
 import 'package:rubbish_detection/pages/auth_page/register_page.dart';
+import 'package:rubbish_detection/pages/tab_page/tab_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,6 +14,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
+  final _authViewModel = AuthViewModel();
 
   late TextEditingController _usernameController;
   late TextEditingController _passwordController;
@@ -295,12 +297,7 @@ class _LoginPageState extends State<LoginPage> {
       width: double.infinity,
       height: 50.h,
       child: ElevatedButton(
-        onPressed: () {
-          if (_formKey.currentState?.validate() == true) {
-            // TODO: 处理登录逻辑
-            log("登录成功");
-          }
-        },
+        onPressed: _handleLogin,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF04C264),
           shape: RoundedRectangleBorder(
@@ -353,5 +350,50 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ],
     );
+  }
+
+  Future<void> _handleLogin() async {
+    if (_formKey.currentState?.validate() == false) return;
+
+    try {
+      final response = await _authViewModel.login({
+        "username": _usernameController.text.trim(),
+        "password": _passwordController.text.trim(),
+        "role": _selectedRoleNotifier.value,
+      });
+
+      if (response["code"] == "0000") {
+        _showSnackBar("登录成功", success: true);
+
+        await Future.delayed(const Duration(milliseconds: 1500));
+
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const TabPage()),
+            (route) => false,
+          );
+        }
+      } else {
+        _showSnackBar("登录失败：${response["message"]}", success: false);
+      }
+    } catch (e) {
+      _showSnackBar("网络异常，请稍后再试", success: false);
+    }
+  }
+
+  void _showSnackBar(String message, {bool success = true}) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: success ? const Color(0xFF00CE68) : Colors.red,
+          content: Text(
+            message,
+            style: TextStyle(fontSize: 16.sp, color: Colors.white),
+          ),
+          duration: Duration(seconds: success ? 2 : 5),
+        ),
+      );
+    }
   }
 }
