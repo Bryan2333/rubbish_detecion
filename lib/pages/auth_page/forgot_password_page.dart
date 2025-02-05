@@ -1,8 +1,9 @@
 import 'dart:async';
-import 'dart:developer';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:rubbish_detection/http/dio_instance.dart';
+import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -13,12 +14,16 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
+  final _usernameFieldKey = GlobalKey<FormFieldState>();
   final _emailFieldKey = GlobalKey<FormFieldState>();
+
+  final _authViewModel = AuthViewModel();
 
   late TextEditingController _usernameController;
   late TextEditingController _emailController;
   late TextEditingController _codeController;
   late TextEditingController _confirmPasswordController;
+  late TextEditingController _newPasswordController;
 
   late ValueNotifier<String> _newPasswordNotifier;
   late ValueNotifier<bool> _isNewPasswordVisibleNotifier;
@@ -37,6 +42,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     _usernameController = TextEditingController();
     _emailController = TextEditingController();
     _codeController = TextEditingController();
+    _newPasswordController = TextEditingController()
+      ..addListener(() {
+        _newPasswordNotifier.value = _newPasswordController.text;
+      });
     _confirmPasswordController = TextEditingController();
 
     _newPasswordNotifier = ValueNotifier("");
@@ -83,6 +92,69 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         _countdownNotifier.value = 60;
       }
     });
+  }
+
+  void _getVerifyCode() async {
+    final isUsernameValid = _usernameFieldKey.currentState?.validate() ?? false;
+    final isEmailValid = _emailFieldKey.currentState?.validate() ?? false;
+
+    if (!isUsernameValid || !isEmailValid) {
+      return;
+    }
+
+    try {
+      final response = await DioInstance.instance.post(
+        "/api/captcha/resetPassword",
+        data: {
+          "username": _usernameController.text.trim(),
+          "email": _emailController.text.trim(),
+        },
+      );
+
+      if (response.data["code"] == "0000") {
+        _showSnackBar("验证码发送成功，请注意查收", success: true);
+        _startCountdown();
+      } else {
+        _showSnackBar("获取验证码失败：${response.data["message"]}", success: false);
+      }
+    } catch (e) {
+      _showSnackBar("网络异常，请稍后重试", success: false);
+    }
+  }
+
+  void _handleResetPassword() async {
+    if (_formKey.currentState?.validate() == false) {
+      return;
+    }
+
+    try {
+      final response = await _authViewModel.resetPassword({
+        "username": _usernameController.text.trim(),
+        "email": _emailController.text.trim(),
+        "newPassword": _newPasswordNotifier.value.trim(),
+        "confirmPassword": _confirmPasswordController.text.trim(),
+        "verifyCode": _codeController.text.trim(),
+      });
+
+      if (response["code"] == "0000") {
+        _showSnackBar("密码重置成功", success: true);
+        _usernameController.clear();
+        _emailController.clear();
+        _codeController.clear();
+        _newPasswordController.clear();
+        _confirmPasswordController.clear();
+
+        await Future.delayed(const Duration(milliseconds: 1500));
+
+        if (mounted) {
+          Navigator.pop(context);
+        }
+      } else {
+        _showSnackBar("密码重置失败：${response["message"]}", success: false);
+      }
+    } catch (e) {
+      _showSnackBar("网络异常，请稍后重试", success: false);
+    }
   }
 
   @override
@@ -210,6 +282,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   Widget _buildUsernameField() {
     return _buildTextField(
+      key: _usernameFieldKey,
       labelText: "用户名",
       hintText: "请输入用户名",
       keyboardType: TextInputType.name,
@@ -270,14 +343,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         valueListenable: _countdownNotifier,
         builder: (context, countdown, child) {
           return ElevatedButton(
-            onPressed: countdown == 60
-                ? () {
-                    if (_emailFieldKey.currentState?.validate() == true) {
-                      // TODO: 发送验证码逻辑
-                      _startCountdown();
-                    }
-                  }
-                : null,
+            onPressed: countdown == 60 ? _getVerifyCode : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF04C264),
               shape: RoundedRectangleBorder(
@@ -315,11 +381,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           valueListenable: _isNewPasswordVisibleNotifier,
           builder: (context, isVisible, child) {
             return _buildTextField(
+              controller: _newPasswordController,
               labelText: "新密码",
               hintText: "请输入新密码",
               keyboardType: TextInputType.visiblePassword,
               prefixIcon: Icons.lock_outline,
-              focusNode: _newPasswordFocusNode, // 绑定焦点节点
+              focusNode: _newPasswordFocusNode,
               obscureText: !isVisible,
               suffixIcon: IconButton(
                 icon: Icon(
@@ -334,12 +401,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       !_isNewPasswordVisibleNotifier.value;
                 },
               ),
-              onChanged: (value) {
-                _newPasswordNotifier.value = value ?? "";
-
-                _showPasswordRequirementsNotifier.value =
-                    _newPasswordFocusNode.hasFocus;
-              },
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return '请输入密码';
@@ -437,12 +498,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       width: double.infinity,
       height: 50.h,
       child: ElevatedButton(
-        onPressed: () {
-          if (_formKey.currentState?.validate() == true) {
-            // TODO: 处理重置密码逻辑
-            log("重置密码");
-          }
-        },
+        onPressed: _handleResetPassword,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF04C264),
           shape: RoundedRectangleBorder(
@@ -460,5 +516,20 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         ),
       ),
     );
+  }
+
+  void _showSnackBar(String message, {bool success = true}) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: success ? const Color(0xFF00CE68) : Colors.red,
+          content: Text(
+            message,
+            style: TextStyle(fontSize: 16.sp, color: Colors.white),
+          ),
+          duration: Duration(seconds: success ? 2 : 5),
+        ),
+      );
+    }
   }
 }

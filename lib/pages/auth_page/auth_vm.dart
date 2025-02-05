@@ -17,4 +17,11 @@ class AuthViewModel {
 
     return response.data;
   }
+
+  Future<dynamic> resetPassword(Map<String, dynamic> payload) async {
+    final response = await DioInstance.instance
+        .post("/api/users/resetPassword", data: payload);
+
+    return response.data;
+  }
 }
