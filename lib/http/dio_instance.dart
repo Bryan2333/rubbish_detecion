@@ -1,7 +1,7 @@
-import 'dart:developer';
-
+import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
-import 'package:rubbish_detection/http/cookie_interceptor.dart';
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:rubbish_detection/http/print_log_interceptor.dart';
 
 /// 封装Dio
@@ -15,14 +15,13 @@ class DioInstance {
   final _dio = Dio();
   final _defaultDuration = const Duration(seconds: 30);
 
-  void initDio(
+  Future<void> initDio(
       {required String baseUrl,
       Duration? connectTimeout,
       Duration? receiveTimeout,
       Duration? sendTimeout,
       ResponseType? responseType = ResponseType.json,
-      String? contentType}) {
-    log("initDio被调用");
+      String? contentType}) async {
     _dio.options = BaseOptions(
         baseUrl: baseUrl,
         connectTimeout: connectTimeout ?? _defaultDuration,
@@ -31,8 +30,17 @@ class DioInstance {
         responseType: responseType,
         contentType: contentType);
 
-    _dio.interceptors.add(CookieInterceptor()); // cookie拦截
     _dio.interceptors.add(PrintLogInterceptor()); // 打印请求信息
+
+    await _initCookieManager();
+  }
+
+  Future<void> _initCookieManager() async {
+    final appDocDir = await getApplicationDocumentsDirectory();
+    final appDocPath = appDocDir.path;
+    final jar =
+        PersistCookieJar(storage: FileStorage("$appDocPath/.cookies/"));
+    _dio.interceptors.add(CookieManager(jar));
   }
 
   void changeBaseURL({required String baseurl}) {
