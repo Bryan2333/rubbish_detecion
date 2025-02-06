@@ -18,8 +18,7 @@ class AuthViewModel {
     if (response.data["code"] == "0000") {
       final model = UserDataModel.fromJson(response.data);
 
-      await SpUtils.saveString(
-          Constants.spUserId, model.data?.id.toString() ?? "-1");
+      await SpUtils.saveInt(Constants.spUserId, model.data?.id ?? -1);
     }
 
     return response.data;
