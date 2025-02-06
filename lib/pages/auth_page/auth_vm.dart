@@ -1,7 +1,7 @@
 import 'package:rubbish_detection/constants.dart';
 import 'package:rubbish_detection/http/dio_instance.dart';
 import 'package:rubbish_detection/repository/data/user.dart';
-import 'package:rubbish_detection/utils/sp_utils.dart';
+import 'package:rubbish_detection/utils/sp_helper.dart';
 
 class AuthViewModel {
   Future<dynamic> register(Map<String, dynamic> payload) async {

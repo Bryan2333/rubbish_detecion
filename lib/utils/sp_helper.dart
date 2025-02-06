@@ -73,7 +73,7 @@ class SpUtils {
     return sp.remove(key);
   }
 
-  static Future<bool> removeAll(String key) async {
+  static Future<bool> removeAll() async {
     final sp = await SharedPreferences.getInstance();
     return sp.clear();
   }
