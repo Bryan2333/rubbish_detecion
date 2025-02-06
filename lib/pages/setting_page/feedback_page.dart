@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:email_validator/email_validator.dart';
+import 'package:rubbish_detection/http/dio_instance.dart';
 
 class FeedbackPage extends StatefulWidget {
   const FeedbackPage({super.key});
@@ -34,23 +35,32 @@ class _FeedbackPageState extends State<FeedbackPage> {
     super.dispose();
   }
 
-  void _submitFeedback() {
-    if (_formKey.currentState?.validate() == true) {
-      // TODO: 在这里添加提交反馈的逻辑，如调用后端API
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "感谢您的反馈！",
-            style: TextStyle(fontSize: 16.sp),
-          ),
-          backgroundColor: const Color(0xFF04C264),
-        ),
+  void _submitFeedback() async {
+    if (_formKey.currentState?.validate() == false) {
+      return;
+    }
+
+    try {
+      final response = await DioInstance.instance.post(
+        "/api/feedback/add",
+        data: {
+          "name": _nameController.text.trim(),
+          "email": _emailController.text.trim(),
+          "content": _feedbackController.text.trim()
+        },
       );
 
-      // 清空输入框
-      _nameController.clear();
-      _emailController.clear();
-      _feedbackController.clear();
+      if (response.data["code"] == "0000") {
+        _showSnackBar("提交成功，感谢您的反馈");
+        // 清空输入框
+        _nameController.clear();
+        _emailController.clear();
+        _feedbackController.clear();
+      } else {
+        _showSnackBar("提交失败，请稍后再试", success: false);
+      }
+    } catch (e) {
+      _showSnackBar("网络异常，请稍后再试", success: false);
     }
   }
 
@@ -62,7 +72,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
           "意见反馈",
           style: TextStyle(
             fontSize: 24.sp,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
@@ -117,15 +127,11 @@ class _FeedbackPageState extends State<FeedbackPage> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(
-            color: Colors.grey[300]!,
-          ),
+          borderSide: BorderSide(color: Colors.grey[300]!),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
-          borderSide: const BorderSide(
-            color: Color(0xFF04C264),
-          ),
+          borderSide: const BorderSide(color: Color(0xFF04C264)),
         ),
         contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
       ),
@@ -157,11 +163,12 @@ class _FeedbackPageState extends State<FeedbackPage> {
       hint: "请输入您的邮箱地址",
       icon: Icons.email_outlined,
       validator: (value) {
-        if (value == null || value.trim().isEmpty) {
+        final trimmed = value?.trim();
+        if (trimmed == null || trimmed.isEmpty) {
           return '邮箱不能为空';
         }
 
-        if (EmailValidator.validate(value.trim()) == false) {
+        if (EmailValidator.validate(trimmed) == false) {
           return '请输入有效的邮箱地址';
         }
 
@@ -178,11 +185,12 @@ class _FeedbackPageState extends State<FeedbackPage> {
       icon: Icons.feedback_outlined,
       maxLines: 5,
       validator: (value) {
-        if (value == null || value.trim().isEmpty) {
+        final trimmed = value?.trim();
+        if (trimmed == null || trimmed.isEmpty) {
           return '反馈内容不能为空';
         }
 
-        if (value.trim().length < 10) {
+        if (trimmed.length < 10) {
           return '反馈内容至少需要10个字符';
         }
 
@@ -209,10 +217,25 @@ class _FeedbackPageState extends State<FeedbackPage> {
           style: TextStyle(
             color: Colors.white,
             fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
     );
+  }
+
+  void _showSnackBar(String message, {bool success = true}) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: success ? const Color(0xFF00CE68) : Colors.red,
+          content: Text(
+            message,
+            style: TextStyle(fontSize: 16.sp, color: Colors.white),
+          ),
+          duration: Duration(seconds: success ? 2 : 5),
+        ),
+      );
+    }
   }
 }
