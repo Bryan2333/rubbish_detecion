@@ -1,6 +1,7 @@
 import 'package:rubbish_detection/constants.dart';
 import 'package:rubbish_detection/http/dio_instance.dart';
 import 'package:rubbish_detection/repository/data/user.dart';
+import 'package:rubbish_detection/utils/db_helper.dart';
 import 'package:rubbish_detection/utils/sp_helper.dart';
 
 class AuthViewModel {
@@ -19,6 +20,8 @@ class AuthViewModel {
       final model = UserDataModel.fromJson(response.data);
 
       await SpUtils.saveInt(Constants.spUserId, model.data?.id ?? -1);
+
+      await DbHelper.instance.insertUser(model.data!);
     }
 
     return response.data;
