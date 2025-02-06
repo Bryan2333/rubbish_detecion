@@ -4,6 +4,13 @@ import 'package:rubbish_detection/repository/data/user.dart';
 import 'package:rubbish_detection/utils/sp_utils.dart';
 
 class AuthViewModel {
+  Future<dynamic> register(Map<String, dynamic> payload) async {
+    final response =
+        await DioInstance.instance.post("/api/register", data: payload);
+
+    return response.data;
+  }
+
   Future<dynamic> login(Map<String, dynamic> payload) async {
     final response =
         await DioInstance.instance.post("/api/login", data: payload);

@@ -1,7 +1,11 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:rubbish_detection/http/dio_instance.dart';
+import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/auth_page/login_page.dart';
 import 'package:rubbish_detection/utils/image_helper.dart';
 
@@ -14,8 +18,12 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
+  final _emailFieldKey = GlobalKey<FormFieldState<String>>();
+
+  final _authViewModel = AuthViewModel();
 
   late TextEditingController _usernameController;
+  late TextEditingController _passwordController;
   late TextEditingController _ageController;
   late TextEditingController _emailController;
   late TextEditingController _signatureController;
@@ -28,6 +36,11 @@ class _RegisterPageState extends State<RegisterPage> {
   late ValueNotifier<bool> _isPasswordVisibleNotifier;
   late ValueNotifier<bool> _showPasswordRequirementsNotifier;
 
+  late TextEditingController _codeController;
+  late ValueNotifier<int> _countdownNotifier;
+
+  Timer? _timer;
+
   @override
   void initState() {
     super.initState();
@@ -36,11 +49,16 @@ class _RegisterPageState extends State<RegisterPage> {
     _passwordNotifier = ValueNotifier("");
     _isPasswordVisibleNotifier = ValueNotifier(false);
     _showPasswordRequirementsNotifier = ValueNotifier(false);
+    _countdownNotifier = ValueNotifier(60);
 
     _usernameController = TextEditingController();
     _ageController = TextEditingController();
     _emailController = TextEditingController();
     _signatureController = TextEditingController();
+    _codeController = TextEditingController();
+
+    _passwordController = TextEditingController()
+      ..addListener(() => _passwordNotifier.value = _passwordController.text);
 
     _passwordFocusNode = FocusNode();
     _passwordFocusNode.addListener(() {
@@ -72,6 +90,7 @@ class _RegisterPageState extends State<RegisterPage> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Container(
+            color: Colors.white,
             padding: EdgeInsets.symmetric(horizontal: 24.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,6 +132,16 @@ class _RegisterPageState extends State<RegisterPage> {
                       SizedBox(height: 16.h),
                       // 邮箱输入框
                       _buildEmailField(),
+                      SizedBox(height: 16.h),
+                      // 验证码输入区域
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          _buildCodeField(),
+                          SizedBox(width: 16.w),
+                          _buildCodeButton(),
+                        ],
+                      ),
                       SizedBox(height: 16.h),
                       // 密码输入框
                       _buildPasswordField(),
@@ -157,7 +186,6 @@ class _RegisterPageState extends State<RegisterPage> {
             source: imageSource,
             maxWidth: 512.r,
             maxHeight: 512.r,
-            imageQuality: 85,
           );
 
           if (image != null) {
@@ -222,6 +250,7 @@ class _RegisterPageState extends State<RegisterPage> {
       {required String labelText,
       required String hintText,
       required IconData prefixIcon,
+      Key? key,
       TextInputType? keyboardType,
       TextEditingController? controller,
       FocusNode? focusNode,
@@ -230,6 +259,7 @@ class _RegisterPageState extends State<RegisterPage> {
       void Function(String?)? onChanged,
       bool obscureText = false}) {
     return TextFormField(
+      key: key,
       focusNode: focusNode,
       obscureText: obscureText,
       controller: controller,
@@ -290,6 +320,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Widget _buildEmailField() {
     return _buildTextField(
+      key: _emailFieldKey,
       labelText: "邮箱",
       hintText: "请输入邮箱",
       prefixIcon: Icons.email_outlined,
@@ -324,6 +355,7 @@ class _RegisterPageState extends State<RegisterPage> {
           valueListenable: _isPasswordVisibleNotifier,
           builder: (context, isVisible, child) {
             return _buildTextField(
+              controller: _passwordController,
               labelText: "密码",
               hintText: "请输入密码",
               keyboardType: TextInputType.visiblePassword,
@@ -353,14 +385,6 @@ class _RegisterPageState extends State<RegisterPage> {
                       !_isPasswordVisibleNotifier.value;
                 },
               ),
-              onChanged: (value) {
-                if (value != null) {
-                  _passwordNotifier.value = value;
-                }
-
-                _showPasswordRequirementsNotifier.value =
-                    _passwordFocusNode.hasFocus;
-              },
             );
           },
         ),
@@ -402,6 +426,54 @@ class _RegisterPageState extends State<RegisterPage> {
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildCodeField() {
+    return Expanded(
+      child: _buildTextField(
+        labelText: "验证码",
+        hintText: "请输入验证码",
+        keyboardType: TextInputType.number,
+        prefixIcon: Icons.numbers,
+        controller: _codeController,
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return '请输入验证码';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  Widget _buildCodeButton() {
+    return SizedBox(
+      width: 120.w,
+      height: 56.h,
+      child: ValueListenableBuilder(
+        valueListenable: _countdownNotifier,
+        builder: (context, countdown, child) {
+          return ElevatedButton(
+            onPressed: countdown == 60 ? _getVerifyCode : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF04C264),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              elevation: 0,
+              padding: EdgeInsets.zero,
+            ),
+            child: Text(
+              countdown == 60 ? "获取验证码" : "${countdown}s",
+              style: TextStyle(
+                fontSize: 15.sp,
+                color: Colors.white,
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -510,11 +582,7 @@ class _RegisterPageState extends State<RegisterPage> {
       width: double.infinity,
       height: 50.h,
       child: ElevatedButton(
-        onPressed: () {
-          if (_formKey.currentState?.validate() == true) {
-            // TODO: 处理注册逻辑
-          }
-        },
+        onPressed: _handleRegister,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF04C264),
           shape: RoundedRectangleBorder(
@@ -567,5 +635,106 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ],
     );
+  }
+
+  void _startCountdown() {
+    _timer?.cancel();
+    _countdownNotifier.value = 60;
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_countdownNotifier.value > 0) {
+        _countdownNotifier.value--;
+      } else {
+        timer.cancel();
+        _countdownNotifier.value = 60;
+      }
+    });
+  }
+
+  void _getVerifyCode() async {
+    if (_emailFieldKey.currentState?.validate() == false) {
+      return;
+    }
+
+    try {
+      final response = await DioInstance.instance.post(
+        "/api/captcha/register",
+        data: {"email": _emailController.text.trim()},
+      );
+
+      if (response.data["code"] == "0000") {
+        _showSnackBar("验证码发送成功，请检查您的邮箱", success: true);
+        _startCountdown();
+      } else {
+        _showSnackBar("获取验证码失败：${response.data["message"]}", success: false);
+      }
+    } catch (e) {
+      _showSnackBar("网络异常，请稍后重试", success: false);
+    }
+  }
+
+  Future<void> _handleRegister() async {
+    if (_formKey.currentState?.validate() == false) {
+      return;
+    }
+
+    try {
+      final res = await _authViewModel.register({
+        "username": _usernameController.text.trim(),
+        "password": _passwordController.text.trim(),
+        "email": _emailController.text.trim(),
+        "verifyCode": _codeController.text.trim(),
+        "age": int.parse(_ageController.text),
+        "signature": _signatureController.text.trim(),
+        "gender": _selectedGenderNotifier.value.trim(),
+        "avatar": _avatarImageNotifier.value != null
+            ? base64Encode(_avatarImageNotifier.value!.readAsBytesSync())
+            : null,
+      });
+
+      if (res["code"] == "0000") {
+        _showSnackBar("注册成功");
+
+        _usernameController.clear();
+        _passwordController.clear();
+        _emailController.clear();
+        _codeController.clear();
+        _ageController.clear();
+        _signatureController.clear();
+
+        await Future.delayed(const Duration(seconds: 2));
+
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) {
+                return const LoginPage();
+              },
+            ),
+            (route) => route.isFirst,
+          );
+        }
+      } else {
+        _showSnackBar("注册失败：${res["message"]}", success: false);
+      }
+    } catch (e) {
+      _showSnackBar("网络异常，请稍后重试", success: false);
+    }
+  }
+
+  void _showSnackBar(String message, {bool success = true}) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: success ? const Color(0xFF00CE68) : Colors.red,
+          content: Text(
+            message,
+            style: TextStyle(fontSize: 16.sp, color: Colors.white),
+          ),
+          duration: Duration(seconds: success ? 2 : 5),
+        ),
+      );
+    }
   }
 }
