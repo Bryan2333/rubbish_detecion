@@ -1,8 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:rubbish_detection/http/dio_instance.dart';
+import 'package:rubbish_detection/repository/data/user.dart';
 
 class ChangePasswordPage extends StatefulWidget {
-  const ChangePasswordPage({super.key});
+  const ChangePasswordPage({super.key, required this.user});
+
+  final User user;
 
   @override
   State<ChangePasswordPage> createState() => _ChangePasswordPageState();
@@ -21,7 +26,14 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   late ValueNotifier<String> _newPasswordNotifier;
   late ValueNotifier<bool> _showPasswordRequirements;
 
+  late TextEditingController _verificationCodeController;
+
+  late ValueNotifier<bool> _isCodeSentNotifier;
+  late ValueNotifier<int> _countdownNotifier;
+
   late FocusNode _newPasswordFocusNode;
+
+  Timer? _timer;
 
   @override
   void initState() {
@@ -41,6 +53,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     _newPasswordFocusNode.addListener(() {
       _showPasswordRequirements.value = _newPasswordFocusNode.hasFocus;
     });
+
+    _verificationCodeController = TextEditingController();
+    _isCodeSentNotifier = ValueNotifier(false);
+    _countdownNotifier = ValueNotifier(60);
   }
 
   @override
@@ -57,7 +73,27 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
     _newPasswordFocusNode.dispose();
 
+    _verificationCodeController.dispose();
+    _isCodeSentNotifier.dispose();
+    _countdownNotifier.dispose();
+
     super.dispose();
+  }
+
+  void _startCountdown() {
+    _timer?.cancel();
+    _countdownNotifier.value = 60;
+    _isCodeSentNotifier.value = true;
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_countdownNotifier.value > 0) {
+        _countdownNotifier.value--;
+      } else {
+        timer.cancel();
+        _isCodeSentNotifier.value = false;
+        _countdownNotifier.value = 60;
+      }
+    });
   }
 
   @override
@@ -68,7 +104,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           "修改密码",
           style: TextStyle(
             fontSize: 24.sp,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
@@ -88,6 +124,16 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   SizedBox(height: 40.h),
                   // 旧密码输入框
                   _buildOldPasswordField(),
+                  SizedBox(height: 20.h),
+                  // 验证码区域
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _buildVerificationCodeField()),
+                      SizedBox(width: 16.w),
+                      _buildSendCodeButton(),
+                    ],
+                  ),
                   SizedBox(height: 20.h),
                   // 新密码输入框
                   _buildNewPasswordField(),
@@ -132,6 +178,79 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             }
 
             return null;
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildVerificationCodeField() {
+    return TextFormField(
+      controller: _verificationCodeController,
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(
+        labelText: "验证码",
+        hintText: "请输入验证码",
+        prefixIcon: const Icon(Icons.numbers, color: Color(0xFF04C264)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: BorderSide(
+            color: Colors.grey[300]!,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.r),
+          borderSide: const BorderSide(
+            color: Color(0xFF04C264),
+          ),
+        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+      ),
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+      validator: (value) {
+        final trimmed = value?.trim();
+        if (trimmed == null || trimmed.isEmpty) {
+          return '请输入验证码';
+        }
+
+        if (RegExp(r'^\d{6}$').hasMatch(trimmed) == false) {
+          return '验证码应为6位数字';
+        }
+
+        return null;
+      },
+    );
+  }
+
+  Widget _buildSendCodeButton() {
+    return ValueListenableBuilder(
+      valueListenable: _isCodeSentNotifier,
+      builder: (context, isSent, child) {
+        return ValueListenableBuilder(
+          valueListenable: _countdownNotifier,
+          builder: (context, countdown, child) {
+            return SizedBox(
+              width: 120.w,
+              height: 55.h,
+              child: ElevatedButton(
+                onPressed: isSent ? null : _getVerifyCode,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF04C264),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  elevation: 0,
+                  padding: EdgeInsets.zero,
+                ),
+                child: Text(
+                  isSent ? "${countdown}s后重试" : "发送验证码",
+                  style: TextStyle(fontSize: 15.sp, color: Colors.white),
+                ),
+              ),
+            );
           },
         );
       },
@@ -187,8 +306,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               },
               onChanged: (value) {
                 _newPasswordNotifier.value = value ?? "";
-                _showPasswordRequirements.value =
-                    _newPasswordFocusNode.hasFocus;
               },
             );
           },
@@ -283,31 +400,13 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             borderRadius: BorderRadius.circular(12.r),
           ),
         ),
-        onPressed: () {
-          if (_formKey.currentState?.validate() == true) {
-            // TODO: 调用后台接口更新密码
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  "密码修改成功",
-                  style: TextStyle(fontSize: 16.sp),
-                ),
-                backgroundColor: const Color(0xFF04C264),
-              ),
-            );
-            _oldPasswordController.clear();
-            _newPasswordController.clear();
-            _confirmPasswordController.clear();
-            _newPasswordNotifier.value = "";
-            _showPasswordRequirements.value = false;
-          }
-        },
+        onPressed: _handleChangePassword,
         child: Text(
           "确认修改",
           style: TextStyle(
             fontSize: 16.sp,
             color: Colors.white,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -364,5 +463,73 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       ),
       onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
     );
+  }
+
+  void _getVerifyCode() async {
+    try {
+      final response = await DioInstance.instance.post(
+        "/api/captcha/changePassword",
+        data: {
+          "userId": widget.user.id,
+        },
+      );
+
+      if (response.data["code"] == "0000") {
+        _showSnackBar("验证码发送成功，请检查您的邮箱");
+        _startCountdown();
+      } else {
+        _showSnackBar("获取验证码失败：${response.data["message"]}", success: false);
+      }
+    } catch (e) {
+      _showSnackBar("网络异常，请稍后再试", success: false);
+    }
+  }
+
+  void _handleChangePassword() async {
+    if (_formKey.currentState?.validate() == false) {
+      return;
+    }
+
+    try {
+      final response = await DioInstance.instance.post(
+        "/api/users/changePassword",
+        data: {
+          "userId": widget.user.id,
+          "oldPassword": _oldPasswordController.text.trim(),
+          "newPassword": _newPasswordController.text.trim(),
+          "confirmPassword": _confirmPasswordController.text.trim(),
+          "verifyCode": _verificationCodeController.text.trim(),
+        },
+      );
+
+      if (response.data["code"] == "0000") {
+        _showSnackBar("修改密码成功");
+        _oldPasswordController.clear();
+        _newPasswordController.clear();
+        _confirmPasswordController.clear();
+        _verificationCodeController.clear();
+        _newPasswordNotifier.value = "";
+        _showPasswordRequirements.value = false;
+      } else {
+        _showSnackBar("修改密码失败：${response.data["message"]}", success: false);
+      }
+    } catch (e) {
+      _showSnackBar("网络异常，请稍后再试", success: false);
+    }
+  }
+
+  void _showSnackBar(String message, {bool success = true}) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: success ? const Color(0xFF00CE68) : Colors.red,
+          content: Text(
+            message,
+            style: TextStyle(fontSize: 16.sp, color: Colors.white),
+          ),
+          duration: Duration(seconds: success ? 2 : 5),
+        ),
+      );
+    }
   }
 }
