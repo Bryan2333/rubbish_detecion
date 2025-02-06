@@ -1,11 +1,14 @@
 import 'dart:async';
-import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:email_validator/email_validator.dart';
+import 'package:rubbish_detection/http/dio_instance.dart';
+import 'package:rubbish_detection/repository/data/user.dart';
 
 class ChangeEmailPage extends StatefulWidget {
-  const ChangeEmailPage({super.key});
+  const ChangeEmailPage({super.key, required this.user});
+
+  final User user;
 
   @override
   State<ChangeEmailPage> createState() => _ChangeEmailPageState();
@@ -63,58 +66,57 @@ class _ChangeEmailPageState extends State<ChangeEmailPage> {
     });
   }
 
-  void _sendVerificationCode() {
-    if (_emailFieldKey.currentState?.validate() == true) {
-      String newEmail = _newEmailController.text.trim();
-      // TODO: 调用后端接口发送验证码到新的邮箱
-      log("发送验证码到邮箱: $newEmail");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("验证码已发送，请检查您的邮箱")),
+  void _getVerifyCode() async {
+    if (_emailFieldKey.currentState?.validate() == false) {
+      return;
+    }
+
+    try {
+      final response = await DioInstance.instance.post(
+        "/api/captcha/changeEmail",
+        data: {
+          "userId": widget.user.id,
+          "newEmail": _newEmailController.text.trim(),
+        },
       );
-      _startCountdown();
+
+      if (response.data["code"] == "0000") {
+        _showSnackBar("验证码发送成功，请检查您的邮箱");
+        _startCountdown();
+      } else {
+        _showSnackBar("获取验证码失败：${response.data["message"]}", success: false);
+      }
+    } catch (e) {
+      _showSnackBar("网络异常，请稍后再试", success: false);
     }
   }
 
-  bool _verifyCode(String email, String code) {
-    // TODO: 调用后端接口验证验证码和新的邮箱地址
-    return true;
-  }
+  void _handleChangeEmail() async {
+    if (_formKey.currentState?.validate() == false) {
+      return;
+    }
 
-  void _handleChangeEmail() {
-    if (_formKey.currentState?.validate() == true) {
-      String newEmail = _newEmailController.text.trim();
-      String code = _verificationCodeController.text.trim();
+    try {
+      final response = await DioInstance.instance.post(
+        "/api/users/changeEmail",
+        data: {
+          "userId": widget.user.id,
+          "newEmail": _newEmailController.text.trim(),
+          "verifyCode": _verificationCodeController.text.trim(),
+        },
+      );
 
-      // 验证验证码和新的邮箱地址
-      if (_verifyCode(newEmail, code)) {
-        // TODO: 在这里调用后端接口更新用户的邮箱
-        log("邮箱已成功修改为: $newEmail");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "邮箱修改成功",
-              style: TextStyle(fontSize: 16.sp),
-            ),
-            backgroundColor: const Color(0xFF04C264),
-          ),
-        );
-        // 清空输入框
+      if (response.data["code"] == "0000") {
+        _showSnackBar("修改邮箱成功");
         _newEmailController.clear();
         _verificationCodeController.clear();
-        // 重置倒计时
-        _timer?.cancel();
         _isCodeSentNotifier.value = false;
+        _timer?.cancel();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "验证码错误或邮箱验证失败，请重试",
-              style: TextStyle(fontSize: 16.sp),
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showSnackBar("修改邮箱失败：${response.data["message"]}", success: false);
       }
+    } catch (e) {
+      _showSnackBar("网络异常，请稍后再试", success: false);
     }
   }
 
@@ -126,7 +128,7 @@ class _ChangeEmailPageState extends State<ChangeEmailPage> {
           "修改邮箱",
           style: TextStyle(
             fontSize: 24.sp,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
@@ -174,7 +176,7 @@ class _ChangeEmailPageState extends State<ChangeEmailPage> {
       decoration: InputDecoration(
         labelText: "新邮箱",
         hintText: "请输入新的邮箱地址",
-        prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF04C264)),
+        prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF00CE68)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
         ),
@@ -185,18 +187,19 @@ class _ChangeEmailPageState extends State<ChangeEmailPage> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
           borderSide: const BorderSide(
-            color: Color(0xFF04C264),
+            color: Color(0xFF00CE68),
           ),
         ),
         contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
       ),
       onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       validator: (value) {
-        if (value == null || value.trim().isEmpty) {
+        final trimmed = value?.trim();
+        if (trimmed == null || trimmed.isEmpty) {
           return '请输入邮箱地址';
         }
 
-        if (EmailValidator.validate(value.trim()) == false) {
+        if (EmailValidator.validate(trimmed) == false) {
           return '请输入有效的邮箱地址';
         }
 
@@ -212,7 +215,7 @@ class _ChangeEmailPageState extends State<ChangeEmailPage> {
       decoration: InputDecoration(
         labelText: "验证码",
         hintText: "请输入验证码",
-        prefixIcon: const Icon(Icons.numbers, color: Color(0xFF04C264)),
+        prefixIcon: const Icon(Icons.numbers, color: Color(0xFF00CE68)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
         ),
@@ -225,23 +228,20 @@ class _ChangeEmailPageState extends State<ChangeEmailPage> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
           borderSide: const BorderSide(
-            color: Color(0xFF04C264),
+            color: Color(0xFF00CE68),
           ),
         ),
         contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
       ),
       onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       validator: (value) {
-        if (value == null || value.trim().isEmpty) {
+        final trimmed = value?.trim();
+        if (trimmed == null || trimmed.isEmpty) {
           return '请输入验证码';
         }
 
-        if (value.trim().length != 6) {
+        if (RegExp(r'^\d{6}$').hasMatch(trimmed) == false) {
           return '验证码应为6位数字';
-        }
-
-        if (RegExp(r'^\d{6}$').hasMatch(value.trim()) == false) {
-          return '验证码应为数字';
         }
 
         return null;
@@ -260,9 +260,9 @@ class _ChangeEmailPageState extends State<ChangeEmailPage> {
               width: 120.w,
               height: 55.h,
               child: ElevatedButton(
-                onPressed: isSent ? null : _sendVerificationCode,
+                onPressed: isSent ? null : _getVerifyCode,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF04C264),
+                  backgroundColor: const Color(0xFF00CE68),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.r),
                   ),
@@ -271,10 +271,7 @@ class _ChangeEmailPageState extends State<ChangeEmailPage> {
                 ),
                 child: Text(
                   isSent ? "${countdown}s后重试" : "发送验证码",
-                  style: TextStyle(
-                    fontSize: 15.sp,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 15.sp, color: Colors.white),
                 ),
               ),
             );
@@ -291,7 +288,7 @@ class _ChangeEmailPageState extends State<ChangeEmailPage> {
       child: ElevatedButton(
         onPressed: _handleChangeEmail,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF04C264),
+          backgroundColor: const Color(0xFF00CE68),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.r),
           ),
@@ -302,10 +299,25 @@ class _ChangeEmailPageState extends State<ChangeEmailPage> {
           style: TextStyle(
             color: Colors.white,
             fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
     );
+  }
+
+  void _showSnackBar(String message, {bool success = true}) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: success ? const Color(0xFF00CE68) : Colors.red,
+          content: Text(
+            message,
+            style: TextStyle(fontSize: 16.sp, color: Colors.white),
+          ),
+          duration: Duration(seconds: success ? 2 : 5),
+        ),
+      );
+    }
   }
 }
