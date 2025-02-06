@@ -109,45 +109,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ],
             ),
-            SizedBox(height: 24.h),
-            // 其他设置卡片
-            _buildSettingsGroup(
-              title: "其他",
-              items: [
-                _buildSettingsItem(
-                  icon: Icons.help_outline,
-                  title: "帮助与反馈",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return const FeedbackPage();
-                        },
-                      ),
-                    );
-                  },
-                ),
-                _buildDivider(),
-                _buildSettingsItem(
-                  icon: Icons.info_outline,
-                  title: "关于我们",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return const AboutUsPage();
-                        },
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-            SizedBox(height: 32.h),
-            // 退出登录按钮
-            _buildLogoutButton(),
           ],
         ),
       ),
@@ -243,47 +204,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildLogoutButton() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16.w),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12.r),
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF04C264),
-            const Color(0xFF04C264).withValues(alpha: 0.8),
-          ],
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            _showDialog(
-              title: "退出登录",
-              content: "确定要退出登录吗？",
-              onConfirm: _handleLogout,
-            );
-          },
-          borderRadius: BorderRadius.circular(12.r),
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 14.h),
-            child: Center(
-              child: Text(
-                "退出登录",
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   void _showDialog(
       {required String title,
       required String content,
@@ -344,10 +264,5 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       );
     }
-  }
-
-  Future<void> _handleLogout() async {
-    // TODO: 实现退出登录逻辑
-    Navigator.pop(context);
   }
 }

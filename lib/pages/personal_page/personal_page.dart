@@ -1,25 +1,39 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+import 'package:rubbish_detection/constants.dart';
+import 'package:rubbish_detection/http/dio_instance.dart';
 import 'package:rubbish_detection/pages/auth_page/login_page.dart';
+import 'package:rubbish_detection/pages/personal_page/personal_vm.dart';
 import 'package:rubbish_detection/pages/setting_page/about_us_page.dart';
 import 'package:rubbish_detection/pages/setting_page/feedback_page.dart';
 import 'package:rubbish_detection/pages/setting_page/setting_page.dart';
+import 'package:rubbish_detection/pages/tab_page/tab_page.dart';
+import 'package:rubbish_detection/repository/data/user.dart';
+import 'package:rubbish_detection/utils/db_helper.dart';
+import 'package:rubbish_detection/utils/sp_helper.dart';
 
 class PersonalPage extends StatefulWidget {
-  final bool? isLoggedIn; // 添加登录状态
-  final String? username; // 用户名可为空
-
-  const PersonalPage({
-    super.key,
-    this.isLoggedIn = true,
-    this.username,
-  });
+  const PersonalPage({super.key});
 
   @override
   State<PersonalPage> createState() => _PersonalPageState();
 }
 
 class _PersonalPageState extends State<PersonalPage> {
+  final _personalViewModel = PersonalViewModel();
+
+  @override
+  void initState() {
+    super.initState();
+    _initUserData();
+  }
+
+  Future<void> _initUserData() async {
+    await _personalViewModel.initData();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,15 +44,20 @@ class _PersonalPageState extends State<PersonalPage> {
           style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.w600),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 20.w),
-          child: Column(
-            children: [
-              _buildPersonInfoCard(), // 个人信息卡片
-              SizedBox(height: 25.h),
-              _buildFunctionList(), // 功能列表
-            ],
+      body: SafeArea(
+        child: ChangeNotifierProvider(
+          create: (_) => _personalViewModel,
+          child: SingleChildScrollView(
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: 20.w),
+              child: Column(
+                children: [
+                  _buildPersonInfoCard(), // 个人信息卡片
+                  SizedBox(height: 25.h),
+                  _buildFunctionList(), // 功能列表
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -61,24 +80,34 @@ class _PersonalPageState extends State<PersonalPage> {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // 头像部分
-          _buildUserAvatar(),
-          SizedBox(height: 15.h),
-          // 用户信息
-          widget.isLoggedIn == true
-              ? _buildLoggedInUserInfo()
-              : _buildLoggedOutUserInfo(),
-          SizedBox(height: 20.h),
-          // 数据统计
-          _buildStatistic(),
-        ],
+      child: Consumer<PersonalViewModel>(
+        builder: (context, vm, child) {
+          return Column(
+            children: [
+              // 头像部分
+              _buildUserAvatar(vm.needLogin, vm.user),
+              SizedBox(height: 15.h),
+              // 用户信息
+              vm.needLogin
+                  ? _buildLoggedOutUserInfo()
+                  : _buildLoggedInUserInfo(vm.user),
+              SizedBox(height: 20.h),
+              // 数据统计
+              _buildStatistic(vm.needLogin, vm.user),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildUserAvatar() {
+  Widget _buildUserAvatar(bool needLogin, User? user) {
+    final defaultAvatar = CircleAvatar(
+      radius: 50.r,
+      backgroundColor: Colors.grey[100],
+      child: Icon(Icons.person, size: 60.r, color: const Color(0xFF00CE68)),
+    );
+
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
@@ -91,25 +120,42 @@ class _PersonalPageState extends State<PersonalPage> {
           ),
         ],
       ),
-      child: CircleAvatar(
-        radius: 50.r,
-        backgroundColor: Colors.grey[100],
-        child: Icon(Icons.person, size: 60.r, color: const Color(0xFF00CE68)),
-      ),
+      child: (needLogin == false && user?.avatar?.isEmpty == false)
+          ? CachedNetworkImage(
+              imageUrl: user!.avatar!,
+              imageBuilder: (context, imageProvider) {
+                return CircleAvatar(
+                  radius: 50.r,
+                  backgroundImage: imageProvider,
+                );
+              },
+              placeholder: (_, __) => const CircularProgressIndicator(
+                color: Color(0xFF00CE68),
+              ),
+              errorWidget: (_, __, ___) => defaultAvatar,
+            )
+          : defaultAvatar,
     );
   }
 
   // 已登录状态下的用户信息
-  Widget _buildLoggedInUserInfo() {
+  Widget _buildLoggedInUserInfo(User? user) {
+    final String signature;
+    if (user?.signature?.isEmpty == true) {
+      signature = "这个人很懒，什么都没留下";
+    } else {
+      signature = user!.signature!;
+    }
+
     return Column(
       children: [
         Text(
-          widget.username ?? "环保达人Bryan",
+          user?.username ?? "佚名",
           style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.w600),
         ),
         SizedBox(height: 8.h),
         Text(
-          "愿这世界，如你一般美好",
+          signature,
           style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
         ),
       ],
@@ -132,7 +178,9 @@ class _PersonalPageState extends State<PersonalPage> {
         GestureDetector(
           onTap: () {
             Navigator.push(
-                context, MaterialPageRoute(builder: (_) => const LoginPage()));
+              context,
+              MaterialPageRoute(builder: (_) => const LoginPage()),
+            );
           },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -158,7 +206,7 @@ class _PersonalPageState extends State<PersonalPage> {
     );
   }
 
-  Widget _buildStatistic() {
+  Widget _buildStatistic(bool needLogin, User? user) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 15.h),
       decoration: BoxDecoration(
@@ -169,7 +217,7 @@ class _PersonalPageState extends State<PersonalPage> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildStatItem(
-            value: widget.isLoggedIn == true ? "1" : "0",
+            value: needLogin ? "0" : "${user?.participationCount ?? 0}",
             label: "参与回收次数",
             icon: Icons.recycling,
           ),
@@ -179,7 +227,9 @@ class _PersonalPageState extends State<PersonalPage> {
             color: Colors.grey[300],
           ),
           _buildStatItem(
-            value: widget.isLoggedIn == true ? "0.49" : "0.00",
+            value: needLogin
+                ? "0.00"
+                : (user?.totalRecycleAmount ?? 0).toStringAsFixed(2),
             label: "累计回收金额(￥)",
             icon: Icons.payments_outlined,
           ),
@@ -225,43 +275,60 @@ class _PersonalPageState extends State<PersonalPage> {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          _buildFunctionItem(
-            icon: Icons.feedback_outlined,
-            title: "意见反馈",
-            onTap: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const FeedbackPage()));
-            },
-          ),
-          Divider(color: Colors.grey[300], thickness: 0.5.h),
-          _buildFunctionItem(
-            icon: Icons.share_outlined,
-            title: "分享给好友",
-            onTap: () {
-              // TODO: 实现分享给微信好友的功能
-            },
-          ),
-          Divider(color: Colors.grey[300], thickness: 0.5.h),
-          _buildFunctionItem(
-            icon: Icons.settings_outlined,
-            title: "设置中心",
-            onTap: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const SettingsPage()));
-            },
-          ),
-          Divider(color: Colors.grey[300], thickness: 0.5.h),
-          _buildFunctionItem(
-            icon: Icons.info_outline_rounded,
-            title: "关于我们",
-            onTap: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const AboutUsPage()));
-            },
-          ),
-        ],
+      child: Consumer<PersonalViewModel>(
+        builder: (context, vm, child) {
+          return Column(
+            children: [
+              _buildFunctionItem(
+                icon: Icons.feedback_outlined,
+                title: "意见反馈",
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const FeedbackPage()));
+                },
+              ),
+              Divider(color: Colors.grey[300], thickness: 0.5.h),
+              _buildFunctionItem(
+                icon: Icons.settings_outlined,
+                title: "设置中心",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) {
+                      return SettingsPage(
+                        user: vm.user,
+                        needLogin: vm.needLogin,
+                      );
+                    }),
+                  ).then((_) => _initUserData());
+                },
+              ),
+              Divider(color: Colors.grey[300], thickness: 0.5.h),
+              _buildFunctionItem(
+                icon: Icons.info_outline_rounded,
+                title: "关于我们",
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const AboutUsPage()));
+                },
+              ),
+              if (!vm.needLogin) ...[
+                Divider(color: Colors.grey[300], thickness: 0.5.h),
+                _buildFunctionItem(
+                  icon: Icons.exit_to_app_outlined,
+                  title: "退出登录",
+                  onTap: () {
+                    _showDialog(
+                      title: "退出登录",
+                      content: "确定要退出登录吗？",
+                      onConfirm: _handleLogout,
+                    );
+                  },
+                )
+              ]
+            ],
+          );
+        },
       ),
     );
   }
@@ -289,5 +356,85 @@ class _PersonalPageState extends State<PersonalPage> {
         ),
       ),
     );
+  }
+
+  void _showDialog(
+      {required String title,
+      required String content,
+      required VoidCallback onConfirm}) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        title: Text(title),
+        content: Text(
+          content,
+          style: TextStyle(fontSize: 16.sp),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "取消",
+              style: TextStyle(
+                color: Colors.grey[600],
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onConfirm,
+            child: const Text(
+              "确定",
+              style: TextStyle(
+                color: Color(0xFF04C264),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleLogout() async {
+    try {
+      final response = await DioInstance.instance.post("/api/logout");
+
+      if (response.data["code"] == "0000") {
+        final userId = await SpUtils.getInt(Constants.spUserId) ?? -1;
+        await DbHelper.instance.deleteUser(userId);
+        await SpUtils.remove(Constants.spUserId);
+
+        _showSnackBar("退出登录成功");
+
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const TabPage()),
+            (predicate) => false,
+          );
+        }
+      } else {
+        _showSnackBar("退出登录失败", success: false);
+      }
+    } catch (e) {
+      _showSnackBar("网络异常，请稍后重试", success: false);
+    }
+  }
+
+  void _showSnackBar(String message, {bool success = true}) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: success ? const Color(0xFF00CE68) : Colors.red,
+          content: Text(
+            message,
+            style: TextStyle(fontSize: 16.sp, color: Colors.white),
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }
