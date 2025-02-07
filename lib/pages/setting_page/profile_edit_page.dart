@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rubbish_detection/http/dio_instance.dart';
+import 'package:rubbish_detection/repository/api.dart';
 import 'package:rubbish_detection/repository/data/user_bean.dart';
 import 'package:rubbish_detection/utils/db_helper.dart';
 import 'package:rubbish_detection/utils/image_helper.dart';
@@ -55,28 +54,21 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     }
 
     try {
-      final response = await DioInstance.instance.post(
-        "/api/users/updateInfo",
-        data: {
-          "id": widget.user.id,
-          "username": _usernameController.text.trim(),
-          "age": int.parse(_ageController.text.trim()),
-          "signature": _signatureController.text.trim(),
-          "gender": _selectedGender.value,
-          "avatar": _avatarImage.value != null
-              ? base64Encode(_avatarImage.value!.readAsBytesSync())
-              : null,
-        },
-      );
+      final (user, message) = await Api.instance.changeUserInfo(
+          widget.user.id!,
+          _usernameController.text.trim(),
+          int.parse(_ageController.text.trim()),
+          _selectedGender.value,
+          _signatureController.text.trim(),
+          _avatarImage.value != null
+              ? base64Encode(await _avatarImage.value!.readAsBytes())
+              : null);
 
-      if (response.statusCode == 1000) {
-        // 更新用户信息
-        final user = UserBean.fromJson(response.data);
-        await DbHelper.instance.updateUser(user);
-
+      if (message == null) {
+        await DbHelper.instance.updateUser(user!);
         _showSnackBar("用户信息更新成功");
       } else {
-        _showSnackBar("用户信息更新失败：${response.statusMessage}", success: false);
+        _showSnackBar("用户信息更新失败：$message", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后再试", success: false);

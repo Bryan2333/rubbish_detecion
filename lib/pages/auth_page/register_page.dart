@@ -4,9 +4,8 @@ import 'dart:io';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rubbish_detection/http/dio_instance.dart';
-import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/auth_page/login_page.dart';
+import 'package:rubbish_detection/repository/api.dart';
 import 'package:rubbish_detection/utils/image_helper.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -19,8 +18,6 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailFieldKey = GlobalKey<FormFieldState<String>>();
-
-  final _authViewModel = AuthViewModel();
 
   late TextEditingController _usernameController;
   late TextEditingController _passwordController;
@@ -657,16 +654,14 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     try {
-      final response = await DioInstance.instance.post(
-        "/api/captcha/register",
-        data: {"email": _emailController.text.trim()},
-      );
+      final message = await Api.instance
+          .getRegisterVerifyCode(_emailController.text.trim());
 
-      if (response.statusCode == 1000) {
+      if (message == null) {
         _showSnackBar("验证码发送成功，请检查您的邮箱", success: true);
         _startCountdown();
       } else {
-        _showSnackBar("获取验证码失败：${response.statusMessage}", success: false);
+        _showSnackBar("获取验证码失败：$message", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后重试", success: false);
@@ -679,20 +674,20 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     try {
-      final res = await _authViewModel.register({
-        "username": _usernameController.text.trim(),
-        "password": _passwordController.text.trim(),
-        "email": _emailController.text.trim(),
-        "verifyCode": _codeController.text.trim(),
-        "age": int.parse(_ageController.text),
-        "signature": _signatureController.text.trim(),
-        "gender": _selectedGenderNotifier.value.trim(),
-        "avatar": _avatarImageNotifier.value != null
+      final message = await Api.instance.register(
+        _usernameController.text.trim(),
+        _passwordController.text.trim(),
+        _emailController.text.trim(),
+        _codeController.text.trim(),
+        int.parse(_ageController.text),
+        _selectedGenderNotifier.value.trim(),
+        _signatureController.text.trim(),
+        _avatarImageNotifier.value != null
             ? base64Encode(_avatarImageNotifier.value!.readAsBytesSync())
             : null,
-      });
+      );
 
-      if (res.statusCode == 1000) {
+      if (message == null) {
         _showSnackBar("注册成功");
 
         _usernameController.clear();
@@ -716,7 +711,7 @@ class _RegisterPageState extends State<RegisterPage> {
           );
         }
       } else {
-        _showSnackBar("注册失败：${res.statusMessage}", success: false);
+        _showSnackBar("注册失败：$message", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后重试", success: false);

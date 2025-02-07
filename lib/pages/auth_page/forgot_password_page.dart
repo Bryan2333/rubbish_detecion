@@ -2,8 +2,7 @@ import 'dart:async';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rubbish_detection/http/dio_instance.dart';
-import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
+import 'package:rubbish_detection/repository/api.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -16,8 +15,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameFieldKey = GlobalKey<FormFieldState>();
   final _emailFieldKey = GlobalKey<FormFieldState>();
-
-  final _authViewModel = AuthViewModel();
 
   late TextEditingController _usernameController;
   late TextEditingController _emailController;
@@ -103,19 +100,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     }
 
     try {
-      final response = await DioInstance.instance.post(
-        "/api/captcha/resetPassword",
-        data: {
-          "username": _usernameController.text.trim(),
-          "email": _emailController.text.trim(),
-        },
-      );
+      final message = await Api.instance.getResetPasswordVerifyCode(
+          _usernameController.text.trim(), _emailController.text.trim());
 
-      if (response.statusCode == 1000) {
+      if (message == null) {
         _showSnackBar("验证码发送成功，请注意查收", success: true);
         _startCountdown();
       } else {
-        _showSnackBar("获取验证码失败：${response.statusMessage}", success: false);
+        _showSnackBar("获取验证码失败：$message", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后重试", success: false);
@@ -128,15 +120,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     }
 
     try {
-      final response = await _authViewModel.resetPassword({
-        "username": _usernameController.text.trim(),
-        "email": _emailController.text.trim(),
-        "newPassword": _newPasswordNotifier.value.trim(),
-        "confirmPassword": _confirmPasswordController.text.trim(),
-        "verifyCode": _codeController.text.trim(),
-      });
+      final message = await Api.instance.resetPassword(
+        _usernameController.text.trim(),
+        _emailController.text.trim(),
+        _newPasswordNotifier.value.trim(),
+        _confirmPasswordController.text.trim(),
+        _codeController.text.trim(),
+      );
 
-      if (response.statusCode == 1000) {
+      if (message == null) {
         _showSnackBar("密码重置成功", success: true);
         _usernameController.clear();
         _emailController.clear();
@@ -150,7 +142,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           Navigator.pop(context);
         }
       } else {
-        _showSnackBar("密码重置失败：${response.statusMessage}", success: false);
+        _showSnackBar("密码重置失败：$message", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后重试", success: false);
@@ -188,7 +180,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    "请填写您的用户名和注册邮箱以重置密码",
+                    "请填写您的用户名和绑定的邮箱以重置密码",
                     style: TextStyle(
                       fontSize: 16.sp,
                       color: Colors.grey[600],
@@ -301,7 +293,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     return _buildTextField(
       key: _emailFieldKey,
       labelText: "邮箱",
-      hintText: "请输入注册邮箱",
+      hintText: "请输入绑定的邮箱",
       keyboardType: TextInputType.emailAddress,
       prefixIcon: Icons.email_outlined,
       controller: _emailController,

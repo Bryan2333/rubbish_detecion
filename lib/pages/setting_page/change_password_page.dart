@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rubbish_detection/http/dio_instance.dart';
+import 'package:rubbish_detection/repository/api.dart';
 import 'package:rubbish_detection/repository/data/user_bean.dart';
 
 class ChangePasswordPage extends StatefulWidget {
@@ -467,18 +467,14 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   void _getVerifyCode() async {
     try {
-      final response = await DioInstance.instance.post(
-        "/api/captcha/changePassword",
-        data: {
-          "userId": widget.user.id,
-        },
-      );
+      final message =
+          await Api.instance.getChangePasswordVerifyCode(widget.user.id!);
 
-      if (response.statusCode == 1000) {
+      if (message == null) {
         _showSnackBar("验证码发送成功，请检查您的邮箱");
         _startCountdown();
       } else {
-        _showSnackBar("获取验证码失败：${response.statusMessage}", success: false);
+        _showSnackBar("获取验证码失败：$message", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后再试", success: false);
@@ -491,18 +487,14 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     }
 
     try {
-      final response = await DioInstance.instance.post(
-        "/api/users/changePassword",
-        data: {
-          "userId": widget.user.id,
-          "oldPassword": _oldPasswordController.text.trim(),
-          "newPassword": _newPasswordController.text.trim(),
-          "confirmPassword": _confirmPasswordController.text.trim(),
-          "verifyCode": _verificationCodeController.text.trim(),
-        },
-      );
+      final message = await Api.instance.changePassword(
+          widget.user.id!,
+          _oldPasswordController.text.trim(),
+          _newPasswordController.text.trim(),
+          _confirmPasswordController.text.trim(),
+          _verificationCodeController.text.trim());
 
-      if (response.statusCode == 1000) {
+      if (message == null) {
         _showSnackBar("修改密码成功");
         _oldPasswordController.clear();
         _newPasswordController.clear();
@@ -510,8 +502,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         _verificationCodeController.clear();
         _newPasswordNotifier.value = "";
         _showPasswordRequirements.value = false;
+        _isCodeSentNotifier.value = false;
+        _timer?.cancel();
       } else {
-        _showSnackBar("修改密码失败：${response.statusMessage}", success: false);
+        _showSnackBar("修改密码失败：$message", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后再试", success: false);

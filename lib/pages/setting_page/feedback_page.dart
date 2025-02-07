@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:email_validator/email_validator.dart';
-import 'package:rubbish_detection/http/dio_instance.dart';
+import 'package:rubbish_detection/repository/api.dart';
 
 class FeedbackPage extends StatefulWidget {
   const FeedbackPage({super.key});
@@ -41,16 +41,12 @@ class _FeedbackPageState extends State<FeedbackPage> {
     }
 
     try {
-      final response = await DioInstance.instance.post(
-        "/api/feedback/add",
-        data: {
-          "name": _nameController.text.trim(),
-          "email": _emailController.text.trim(),
-          "content": _feedbackController.text.trim()
-        },
-      );
+      final statusCode = await Api.instance.sendFeedback(
+          _nameController.text.trim(),
+          _emailController.text.trim(),
+          _feedbackController.text.trim());
 
-      if (response.statusCode == 1000) {
+      if (statusCode == 1000) {
         _showSnackBar("提交成功，感谢您的反馈");
         // 清空输入框
         _nameController.clear();

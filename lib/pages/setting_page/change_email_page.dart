@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:email_validator/email_validator.dart';
-import 'package:rubbish_detection/http/dio_instance.dart';
+import 'package:rubbish_detection/repository/api.dart';
 import 'package:rubbish_detection/repository/data/user_bean.dart';
 
 class ChangeEmailPage extends StatefulWidget {
@@ -72,19 +72,14 @@ class _ChangeEmailPageState extends State<ChangeEmailPage> {
     }
 
     try {
-      final response = await DioInstance.instance.post(
-        "/api/captcha/changeEmail",
-        data: {
-          "userId": widget.user.id,
-          "newEmail": _newEmailController.text.trim(),
-        },
-      );
+      final message = await Api.instance.getChangeEmailVerifyCode(
+          widget.user.id!, _newEmailController.text.trim());
 
-      if (response.statusCode == 1000) {
+      if (message == null) {
         _showSnackBar("验证码发送成功，请检查您的邮箱");
         _startCountdown();
       } else {
-        _showSnackBar("获取验证码失败：${response.statusMessage}", success: false);
+        _showSnackBar("获取验证码失败：$message", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后再试", success: false);
@@ -97,23 +92,19 @@ class _ChangeEmailPageState extends State<ChangeEmailPage> {
     }
 
     try {
-      final response = await DioInstance.instance.post(
-        "/api/users/changeEmail",
-        data: {
-          "userId": widget.user.id,
-          "newEmail": _newEmailController.text.trim(),
-          "verifyCode": _verificationCodeController.text.trim(),
-        },
-      );
+      final message = await Api.instance.changeEmail(
+          widget.user.id!,
+          _newEmailController.text.trim(),
+          _verificationCodeController.text.trim());
 
-      if (response.statusCode == 1000) {
+      if (message == null) {
         _showSnackBar("修改邮箱成功");
         _newEmailController.clear();
         _verificationCodeController.clear();
         _isCodeSentNotifier.value = false;
         _timer?.cancel();
       } else {
-        _showSnackBar("修改邮箱失败：${response.statusMessage}", success: false);
+        _showSnackBar("修改邮箱失败：$message", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后再试", success: false);

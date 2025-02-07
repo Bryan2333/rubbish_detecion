@@ -1,6 +1,6 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:rubbish_detection/http/dio_instance.dart';
+import 'package:rubbish_detection/repository/api.dart';
 import 'package:rubbish_detection/repository/data/rubbish_type_desc_bean.dart';
 
 class RubbishTypeDescViewModel with ChangeNotifier {
@@ -8,9 +8,7 @@ class RubbishTypeDescViewModel with ChangeNotifier {
 
   Future<void> getDesc(int type) async {
     try {
-      final res = await DioInstance.instance.get("/api/rubbish-type/$type");
-
-      final data = RubbishTypeDescBean.fromJson(res.data);
+      final data = await Api.instance.getRubbishTypeDesc(type);
 
       desc = data;
     } catch (e) {

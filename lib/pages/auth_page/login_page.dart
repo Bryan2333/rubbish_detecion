@@ -356,13 +356,13 @@ class _LoginPageState extends State<LoginPage> {
     if (_formKey.currentState?.validate() == false) return;
 
     try {
-      final response = await _authViewModel.login({
-        "username": _usernameController.text.trim(),
-        "password": _passwordController.text.trim(),
-        "role": _selectedRoleNotifier.value,
-      });
+      final message = await _authViewModel.login(
+        username: _usernameController.text.trim(),
+        password: _passwordController.text.trim(),
+        role: _selectedRoleNotifier.value,
+      );
 
-      if (response.statusCode == 1000) {
+      if (message == null) {
         _showSnackBar("登录成功", success: true);
 
         await Future.delayed(const Duration(milliseconds: 1500));
@@ -375,7 +375,7 @@ class _LoginPageState extends State<LoginPage> {
           );
         }
       } else {
-        _showSnackBar("登录失败：${response.statusMessage}", success: false);
+        _showSnackBar("登录失败：$message", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后再试", success: false);

@@ -1,6 +1,6 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:rubbish_detection/http/dio_instance.dart';
+import 'package:rubbish_detection/repository/api.dart';
 import 'package:rubbish_detection/repository/data/banner_bean.dart';
 
 class HomeViewModel with ChangeNotifier {
@@ -8,18 +8,13 @@ class HomeViewModel with ChangeNotifier {
 
   Future<void> getBannerData() async {
     try {
-      final res = await DioInstance.instance.get("/api/banner/getBanner");
+      final list = await Api.instance.getBannerList();
 
-      if (res.data is List) {
-        final bannerJsonList = res.data as List;
-
-        final banners = bannerJsonList
-            .map((json) => BannerBean.fromJson(json as Map<String, dynamic>))
-            .toList();
-
+      if (bannerList.isNotEmpty) {
         bannerList.clear();
-        bannerList.addAll(banners);
       }
+
+      bannerList.addAll(list ?? []);
     } catch (e) {
       log("Fetch banner data error: $e");
     } finally {
