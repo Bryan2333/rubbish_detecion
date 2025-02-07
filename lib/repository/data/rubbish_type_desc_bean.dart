@@ -1,28 +1,4 @@
-class RubbishTypeDescModel {
-  String? msg;
-  String? code;
-  RubbishTypeDesc? data;
-
-  RubbishTypeDescModel({this.msg, this.code, this.data});
-
-  RubbishTypeDescModel.fromJson(Map<String, dynamic> json) {
-    msg = json['msg'];
-    code = json['code'];
-    data = json['data'] != null ? RubbishTypeDesc.fromJson(json['data']) : null;
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['msg'] = msg;
-    data['code'] = code;
-    if (this.data != null) {
-      data['data'] = this.data!.toJson();
-    }
-    return data;
-  }
-}
-
-class RubbishTypeDesc {
+class RubbishTypeDescBean {
   int? id;
   int? type;
   String? name;
@@ -31,7 +7,7 @@ class RubbishTypeDesc {
   List<String>? handleMethods;
   List<String>? commonThings;
 
-  RubbishTypeDesc(
+  RubbishTypeDescBean(
       {this.id,
       this.type,
       this.name,
@@ -40,7 +16,7 @@ class RubbishTypeDesc {
       this.handleMethods,
       this.commonThings});
 
-  RubbishTypeDesc.fromJson(Map<String, dynamic> json) {
+  RubbishTypeDescBean.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     type = json['type'];
     name = json['name'];
