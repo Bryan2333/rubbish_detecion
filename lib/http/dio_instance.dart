@@ -2,7 +2,7 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:rubbish_detection/http/print_log_interceptor.dart';
+import 'package:rubbish_detection/http/response_interceptor.dart';
 
 /// 封装Dio
 class DioInstance {
@@ -30,16 +30,16 @@ class DioInstance {
         responseType: responseType,
         contentType: contentType);
 
-    _dio.interceptors.add(PrintLogInterceptor()); // 打印请求信息
-
     await _initCookieManager();
+    _dio.interceptors.add(LogInterceptor(
+        requestBody: true, responseBody: true, requestHeader: true));
+    _dio.interceptors.add(ResponseInterceptor());
   }
 
   Future<void> _initCookieManager() async {
     final appDocDir = await getApplicationDocumentsDirectory();
     final appDocPath = appDocDir.path;
-    final jar =
-        PersistCookieJar(storage: FileStorage("$appDocPath/.cookies/"));
+    final jar = PersistCookieJar(storage: FileStorage("$appDocPath/.cookies/"));
     _dio.interceptors.add(CookieManager(jar));
   }
 
