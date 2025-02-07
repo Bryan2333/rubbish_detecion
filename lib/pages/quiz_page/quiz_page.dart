@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:rubbish_detection/pages/quiz_page/quiz_result_page.dart';
 import 'package:rubbish_detection/pages/quiz_page/quiz_vm.dart';
-import 'package:rubbish_detection/repository/data/quiz.dart';
+import 'package:rubbish_detection/repository/data/quiz_bean.dart';
 
 class QuizPage extends StatefulWidget {
   const QuizPage({super.key});
@@ -20,7 +20,7 @@ class _QuizPageState extends State<QuizPage> {
   Timer? timer;
 
   late ValueNotifier<double> _progressNotifier;
-  late ValueNotifier<Quiz?> _currentQuestionNotifier;
+  late ValueNotifier<QuizBean?> _currentQuestionNotifier;
   late ValueNotifier<int?> _selectedOptionIndexNotifier;
   late ValueNotifier<int> _currentQuestionIndexNotifier;
 

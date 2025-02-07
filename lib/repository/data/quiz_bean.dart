@@ -1,33 +1,4 @@
-class QuizModel {
-  String? msg;
-  String? code;
-  List<Quiz>? data;
-
-  QuizModel({this.msg, this.code, this.data});
-
-  QuizModel.fromJson(Map<String, dynamic> json) {
-    msg = json['msg'];
-    code = json['code'];
-    if (json['data'] != null) {
-      data = <Quiz>[];
-      json['data'].forEach((v) {
-        data!.add(Quiz.fromJson(v));
-      });
-    }
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['msg'] = msg;
-    data['code'] = code;
-    if (this.data != null) {
-      data['data'] = this.data!.map((v) => v.toJson()).toList();
-    }
-    return data;
-  }
-}
-
-class Quiz {
+class QuizBean {
   int? id;
   String? question;
   String? optionA;
@@ -39,7 +10,7 @@ class Quiz {
   String? createTime;
   String? updateTime;
 
-  Quiz(
+  QuizBean(
       {this.id,
       this.question,
       this.optionA,
@@ -51,7 +22,7 @@ class Quiz {
       this.createTime,
       this.updateTime});
 
-  Quiz.fromJson(Map<String, dynamic> json) {
+  QuizBean.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     question = json['question'];
     optionA = json['optionA'];
