@@ -10,7 +10,7 @@ class AuthViewModel {
     final response =
         await DioInstance.instance.post("/api/register", data: payload);
 
-    return response.data;
+    return response;
   }
 
   Future<Response> login(Map<String, dynamic> payload) async {
@@ -25,13 +25,13 @@ class AuthViewModel {
       await DbHelper.instance.insertUser(user);
     }
 
-    return response.data;
+    return response;
   }
 
   Future<Response> resetPassword(Map<String, dynamic> payload) async {
     final response = await DioInstance.instance
         .post("/api/users/resetPassword", data: payload);
 
-    return response.data;
+    return response;
   }
 }
