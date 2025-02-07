@@ -26,13 +26,15 @@ class DiscoveryViewModel with ChangeNotifier {
       if (res.data is List) {
         final newsJsonList = res.data as List;
 
-        final news = newsJsonList
-            .map((json) => NewsBean.fromJson(json as Map<String, dynamic>))
-            .toList();
+        if (newsJsonList.isNotEmpty) {
+          final news = newsJsonList
+              .map((json) => NewsBean.fromJson(json as Map<String, dynamic>))
+              .toList();
 
-        newsList.addAll(news);
-      } else {
-        hasMore = false;
+          newsList.addAll(news);
+        } else {
+          hasMore = false;
+        }
       }
     } catch (e) {
       log("Error fetching news: $e");
