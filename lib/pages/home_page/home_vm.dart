@@ -1,39 +1,29 @@
-import 'dart:convert';
-
+import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:rubbish_detection/repository/data/home_banner_data.dart';
+import 'package:rubbish_detection/http/dio_instance.dart';
+import 'package:rubbish_detection/repository/data/banner_bean.dart';
 
 class HomeViewModel with ChangeNotifier {
-  final bannerList = <HomeBanner>[];
+  final bannerList = <BannerBean>[];
 
   Future<void> getBannerData() async {
-    // final dio = Dio(BaseOptions(baseUrl: "https://pastebin.com"));
+    try {
+      final res = await DioInstance.instance.get("/api/banner/getBanner");
 
-    // final res = await dio.get("/raw/hxnGnRsA");
+      if (res.data is List) {
+        final bannerJsonList = res.data as List;
 
-    const res = '''
-                {
-                  "data": [
-                    {
-                      "id": 1,
-                      "imagePath": "https://pic.imgdb.cn/item/67506c16d0e0a243d4dd92b7.png"
-                    }
-                  ],
-                  "errorCode": 0,
-                  "errorMsg": ""
-                }
-                ''';
+        final banners = bannerJsonList
+            .map((json) => BannerBean.fromJson(json as Map<String, dynamic>))
+            .toList();
 
-    final resToString = json.decode(res);
-
-    if (bannerList.isNotEmpty) {
-      bannerList.clear();
+        bannerList.clear();
+        bannerList.addAll(banners);
+      }
+    } catch (e) {
+      log("Fetch banner data error: $e");
+    } finally {
+      notifyListeners();
     }
-
-    final data = HomeBannerDataModel.fromJson(resToString);
-
-    bannerList.addAll(data.data ?? []);
-
-    notifyListeners();
   }
 }
