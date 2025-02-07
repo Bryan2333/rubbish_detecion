@@ -6,7 +6,7 @@ import 'package:pull_to_refresh_flutter3/pull_to_refresh_flutter3.dart';
 import 'package:rubbish_detection/pages/discovery_page/discovery_vm.dart';
 import 'package:rubbish_detection/pages/quiz_page/quiz_page.dart';
 import 'package:rubbish_detection/pages/recycle_page/recycle_page.dart';
-import 'package:rubbish_detection/repository/data/news_article.dart';
+import 'package:rubbish_detection/repository/data/news_bean.dart';
 import 'package:rubbish_detection/widget/web/webview_page.dart';
 
 class DiscoveryPage extends StatefulWidget {
@@ -216,7 +216,7 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
     ];
   }
 
-  Widget _buildNewsCard(News news) {
+  Widget _buildNewsCard(NewsBean news) {
     final createdTime =
         _dateFormatter.format(_dateFormatter.parse(news.createdTime ?? ""));
 

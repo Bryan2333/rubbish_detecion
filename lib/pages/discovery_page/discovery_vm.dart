@@ -1,10 +1,10 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:rubbish_detection/http/dio_instance.dart';
-import 'package:rubbish_detection/repository/data/news_article.dart';
+import 'package:rubbish_detection/repository/data/news_bean.dart';
 
 class DiscoveryViewModel with ChangeNotifier {
-  final newsList = <News>[];
+  final newsList = <NewsBean>[];
   var hasMore = true;
   var currentPage = 1;
 
@@ -23,12 +23,16 @@ class DiscoveryViewModel with ChangeNotifier {
         params: {"pageNum": currentPage},
       );
 
-      final model = NewsArticleModel.fromJson(res.data);
+      if (res.data is List) {
+        final newsJsonList = res.data as List;
 
-      if (model.data?.isEmpty == true) {
-        hasMore = false;
+        final news = newsJsonList
+            .map((json) => NewsBean.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        newsList.addAll(news);
       } else {
-        newsList.addAll(model.data ?? []);
+        hasMore = false;
       }
     } catch (e) {
       log("Error fetching news: $e");
