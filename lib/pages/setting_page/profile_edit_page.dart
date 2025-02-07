@@ -5,14 +5,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rubbish_detection/http/dio_instance.dart';
-import 'package:rubbish_detection/repository/data/user.dart';
+import 'package:rubbish_detection/repository/data/user_bean.dart';
 import 'package:rubbish_detection/utils/db_helper.dart';
 import 'package:rubbish_detection/utils/image_helper.dart';
 
 class ProfileEditPage extends StatefulWidget {
   const ProfileEditPage({super.key, required this.user});
 
-  final User user;
+  final UserBean user;
 
   @override
   State<ProfileEditPage> createState() => _ProfileEditPageState();
@@ -69,14 +69,14 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         },
       );
 
-      if (response.data["code"] == "0000") {
+      if (response.statusCode == 1000) {
         // 更新用户信息
-        final user = UserDataModel.fromJson(response.data).data;
-        await DbHelper.instance.updateUser(user!);
+        final user = UserBean.fromJson(response.data);
+        await DbHelper.instance.updateUser(user);
 
         _showSnackBar("用户信息更新成功");
       } else {
-        _showSnackBar("用户信息更新失败：${response.data["message"]}", success: false);
+        _showSnackBar("用户信息更新失败：${response.statusMessage}", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后再试", success: false);

@@ -1,5 +1,5 @@
 import 'package:path/path.dart' as p;
-import 'package:rubbish_detection/repository/data/user.dart';
+import 'package:rubbish_detection/repository/data/user_bean.dart';
 import 'package:sqflite/sqflite.dart';
 
 class DbHelper {
@@ -36,7 +36,7 @@ class DbHelper {
     ''');
   }
 
-  Future<User?> getUser(int id) async {
+  Future<UserBean?> getUser(int id) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       'users',
@@ -45,18 +45,18 @@ class DbHelper {
     );
 
     if (maps.isNotEmpty) {
-      return User.fromJson(maps.first);
+      return UserBean.fromJson(maps.first);
     }
 
     return null;
   }
 
-  Future<int> insertUser(User user) async {
+  Future<int> insertUser(UserBean user) async {
     final db = await database;
     return await db.insert('users', user.toJson());
   }
 
-  Future<int> updateUser(User user) async {
+  Future<int> updateUser(UserBean user) async {
     final db = await database;
     return await db.update(
       'users',

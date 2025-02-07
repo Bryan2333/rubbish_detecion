@@ -2,12 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rubbish_detection/http/dio_instance.dart';
-import 'package:rubbish_detection/repository/data/user.dart';
+import 'package:rubbish_detection/repository/data/user_bean.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key, required this.user});
 
-  final User user;
+  final UserBean user;
 
   @override
   State<ChangePasswordPage> createState() => _ChangePasswordPageState();
@@ -474,11 +474,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         },
       );
 
-      if (response.data["code"] == "0000") {
+      if (response.statusCode == 1000) {
         _showSnackBar("验证码发送成功，请检查您的邮箱");
         _startCountdown();
       } else {
-        _showSnackBar("获取验证码失败：${response.data["message"]}", success: false);
+        _showSnackBar("获取验证码失败：${response.statusMessage}", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后再试", success: false);
@@ -502,7 +502,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         },
       );
 
-      if (response.data["code"] == "0000") {
+      if (response.statusCode == 1000) {
         _showSnackBar("修改密码成功");
         _oldPasswordController.clear();
         _newPasswordController.clear();
@@ -511,7 +511,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         _newPasswordNotifier.value = "";
         _showPasswordRequirements.value = false;
       } else {
-        _showSnackBar("修改密码失败：${response.data["message"]}", success: false);
+        _showSnackBar("修改密码失败：${response.statusMessage}", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后再试", success: false);

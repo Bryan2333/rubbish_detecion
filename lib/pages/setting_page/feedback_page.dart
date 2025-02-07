@@ -50,7 +50,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
         },
       );
 
-      if (response.data["code"] == "0000") {
+      if (response.statusCode == 1000) {
         _showSnackBar("提交成功，感谢您的反馈");
         // 清空输入框
         _nameController.clear();

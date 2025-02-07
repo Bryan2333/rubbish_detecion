@@ -362,7 +362,7 @@ class _LoginPageState extends State<LoginPage> {
         "role": _selectedRoleNotifier.value,
       });
 
-      if (response["code"] == "0000") {
+      if (response.statusCode == 1000) {
         _showSnackBar("登录成功", success: true);
 
         await Future.delayed(const Duration(milliseconds: 1500));
@@ -375,7 +375,7 @@ class _LoginPageState extends State<LoginPage> {
           );
         }
       } else {
-        _showSnackBar("登录失败：${response["message"]}", success: false);
+        _showSnackBar("登录失败：${response.statusMessage}", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后再试", success: false);

@@ -662,11 +662,11 @@ class _RegisterPageState extends State<RegisterPage> {
         data: {"email": _emailController.text.trim()},
       );
 
-      if (response.data["code"] == "0000") {
+      if (response.statusCode == 1000) {
         _showSnackBar("验证码发送成功，请检查您的邮箱", success: true);
         _startCountdown();
       } else {
-        _showSnackBar("获取验证码失败：${response.data["message"]}", success: false);
+        _showSnackBar("获取验证码失败：${response.statusMessage}", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后重试", success: false);
@@ -692,7 +692,7 @@ class _RegisterPageState extends State<RegisterPage> {
             : null,
       });
 
-      if (res["code"] == "0000") {
+      if (res.statusCode == 1000) {
         _showSnackBar("注册成功");
 
         _usernameController.clear();
@@ -716,7 +716,7 @@ class _RegisterPageState extends State<RegisterPage> {
           );
         }
       } else {
-        _showSnackBar("注册失败：${res["message"]}", success: false);
+        _showSnackBar("注册失败：${res.statusMessage}", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后重试", success: false);

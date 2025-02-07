@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:rubbish_detection/http/dio_instance.dart';
-import 'package:rubbish_detection/repository/data/user.dart';
+import 'package:rubbish_detection/repository/data/user_bean.dart';
 
 class ChangeEmailPage extends StatefulWidget {
   const ChangeEmailPage({super.key, required this.user});
 
-  final User user;
+  final UserBean user;
 
   @override
   State<ChangeEmailPage> createState() => _ChangeEmailPageState();
@@ -80,11 +80,11 @@ class _ChangeEmailPageState extends State<ChangeEmailPage> {
         },
       );
 
-      if (response.data["code"] == "0000") {
+      if (response.statusCode == 1000) {
         _showSnackBar("验证码发送成功，请检查您的邮箱");
         _startCountdown();
       } else {
-        _showSnackBar("获取验证码失败：${response.data["message"]}", success: false);
+        _showSnackBar("获取验证码失败：${response.statusMessage}", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后再试", success: false);
@@ -106,14 +106,14 @@ class _ChangeEmailPageState extends State<ChangeEmailPage> {
         },
       );
 
-      if (response.data["code"] == "0000") {
+      if (response.statusCode == 1000) {
         _showSnackBar("修改邮箱成功");
         _newEmailController.clear();
         _verificationCodeController.clear();
         _isCodeSentNotifier.value = false;
         _timer?.cancel();
       } else {
-        _showSnackBar("修改邮箱失败：${response.data["message"]}", success: false);
+        _showSnackBar("修改邮箱失败：${response.statusMessage}", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后再试", success: false);

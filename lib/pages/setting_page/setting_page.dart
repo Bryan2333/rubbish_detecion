@@ -5,12 +5,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:rubbish_detection/pages/setting_page/change_email_page.dart';
 import 'package:rubbish_detection/pages/setting_page/change_password_page.dart';
 import 'package:rubbish_detection/pages/setting_page/profile_edit_page.dart';
-import 'package:rubbish_detection/repository/data/user.dart';
+import 'package:rubbish_detection/repository/data/user_bean.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key, this.user, required this.needLogin});
 
-  final User? user;
+  final UserBean? user;
   final bool needLogin;
 
   @override

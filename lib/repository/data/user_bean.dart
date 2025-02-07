@@ -1,28 +1,4 @@
-class UserDataModel {
-  String? code;
-  String? message;
-  User? data;
-
-  UserDataModel({this.code, this.message, this.data});
-
-  UserDataModel.fromJson(Map<String, dynamic> json) {
-    code = json['code'];
-    message = json['message'];
-    data = json['data'] != null ? User.fromJson(json['data']) : null;
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['code'] = code;
-    data['message'] = message;
-    if (this.data != null) {
-      data['data'] = this.data!.toJson();
-    }
-    return data;
-  }
-}
-
-class User {
+class UserBean {
   int? id;
   String? username;
   String? email;
@@ -33,7 +9,7 @@ class User {
   int? participationCount;
   double? totalRecycleAmount;
 
-  User(
+  UserBean(
       {this.id,
       this.username,
       this.email,
@@ -44,7 +20,7 @@ class User {
       this.participationCount,
       this.totalRecycleAmount});
 
-  User.fromJson(Map<String, dynamic> json) {
+  UserBean.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     username = json['username'];
     email = json['email'];

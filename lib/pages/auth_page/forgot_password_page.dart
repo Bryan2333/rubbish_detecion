@@ -111,11 +111,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         },
       );
 
-      if (response.data["code"] == "0000") {
+      if (response.statusCode == 1000) {
         _showSnackBar("验证码发送成功，请注意查收", success: true);
         _startCountdown();
       } else {
-        _showSnackBar("获取验证码失败：${response.data["message"]}", success: false);
+        _showSnackBar("获取验证码失败：${response.statusMessage}", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后重试", success: false);
@@ -136,7 +136,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         "verifyCode": _codeController.text.trim(),
       });
 
-      if (response["code"] == "0000") {
+      if (response.statusCode == 1000) {
         _showSnackBar("密码重置成功", success: true);
         _usernameController.clear();
         _emailController.clear();
@@ -150,7 +150,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           Navigator.pop(context);
         }
       } else {
-        _showSnackBar("密码重置失败：${response["message"]}", success: false);
+        _showSnackBar("密码重置失败：${response.statusMessage}", success: false);
       }
     } catch (e) {
       _showSnackBar("网络异常，请稍后重试", success: false);

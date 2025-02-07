@@ -10,7 +10,7 @@ import 'package:rubbish_detection/pages/setting_page/about_us_page.dart';
 import 'package:rubbish_detection/pages/setting_page/feedback_page.dart';
 import 'package:rubbish_detection/pages/setting_page/setting_page.dart';
 import 'package:rubbish_detection/pages/tab_page/tab_page.dart';
-import 'package:rubbish_detection/repository/data/user.dart';
+import 'package:rubbish_detection/repository/data/user_bean.dart';
 import 'package:rubbish_detection/utils/db_helper.dart';
 import 'package:rubbish_detection/utils/sp_helper.dart';
 
@@ -101,7 +101,7 @@ class _PersonalPageState extends State<PersonalPage> {
     );
   }
 
-  Widget _buildUserAvatar(bool needLogin, User? user) {
+  Widget _buildUserAvatar(bool needLogin, UserBean? user) {
     final defaultAvatar = CircleAvatar(
       radius: 50.r,
       backgroundColor: Colors.grey[100],
@@ -139,7 +139,7 @@ class _PersonalPageState extends State<PersonalPage> {
   }
 
   // 已登录状态下的用户信息
-  Widget _buildLoggedInUserInfo(User? user) {
+  Widget _buildLoggedInUserInfo(UserBean? user) {
     final String signature;
     if (user?.signature?.isEmpty == true) {
       signature = "这个人很懒，什么都没留下";
@@ -206,7 +206,7 @@ class _PersonalPageState extends State<PersonalPage> {
     );
   }
 
-  Widget _buildStatistic(bool needLogin, User? user) {
+  Widget _buildStatistic(bool needLogin, UserBean? user) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 15.h),
       decoration: BoxDecoration(
@@ -401,7 +401,7 @@ class _PersonalPageState extends State<PersonalPage> {
     try {
       final response = await DioInstance.instance.post("/api/logout");
 
-      if (response.data["code"] == "0000") {
+      if (response.statusCode == 1000) {
         final userId = await SpUtils.getInt(Constants.spUserId) ?? -1;
         await DbHelper.instance.deleteUser(userId);
         await SpUtils.remove(Constants.spUserId);
