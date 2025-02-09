@@ -1,6 +1,7 @@
 import 'package:rubbish_detection/http/dio_instance.dart';
 import 'package:rubbish_detection/repository/data/banner_bean.dart';
 import 'package:rubbish_detection/repository/data/quiz_bean.dart';
+import 'package:rubbish_detection/repository/data/recognition_collection_bean.dart';
 import 'package:rubbish_detection/repository/data/rubbish_type_desc_bean.dart';
 import 'package:rubbish_detection/repository/data/user_bean.dart';
 
@@ -35,6 +36,12 @@ class Api {
     }
 
     return (null, response.statusMessage);
+  }
+
+  Future<int?> logout() async {
+    final response = await DioInstance.instance.post("/api/logout");
+
+    return response.statusCode;
   }
 
   Future<String?> register(

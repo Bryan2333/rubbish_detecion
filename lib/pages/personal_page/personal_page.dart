@@ -2,8 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
-import 'package:rubbish_detection/constants.dart';
-import 'package:rubbish_detection/http/dio_instance.dart';
+import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/auth_page/login_page.dart';
 import 'package:rubbish_detection/pages/personal_page/personal_vm.dart';
 import 'package:rubbish_detection/pages/setting_page/about_us_page.dart';
@@ -12,8 +11,6 @@ import 'package:rubbish_detection/pages/setting_page/setting_page.dart';
 import 'package:rubbish_detection/pages/tab_page/tab_page.dart';
 import 'package:rubbish_detection/repository/data/user_bean.dart';
 import 'package:rubbish_detection/utils/custom_helper.dart';
-import 'package:rubbish_detection/utils/db_helper.dart';
-import 'package:rubbish_detection/utils/sp_helper.dart';
 
 class PersonalPage extends StatefulWidget {
   const PersonalPage({super.key});
@@ -32,7 +29,15 @@ class _PersonalPageState extends State<PersonalPage> {
   }
 
   Future<void> _initUserData() async {
-    await _personalViewModel.initData();
+    final isLogged =
+        await Provider.of<AuthViewModel>(context, listen: false).isLogged();
+    if (isLogged) {
+      if (!mounted) return;
+
+      final userId =
+          await Provider.of<AuthViewModel>(context, listen: false).getUserId();
+      await _personalViewModel.initData(userId);
+    }
   }
 
   @override
@@ -86,15 +91,15 @@ class _PersonalPageState extends State<PersonalPage> {
           return Column(
             children: [
               // 头像部分
-              _buildUserAvatar(vm.needLogin, vm.user),
+              _buildUserAvatar(vm.user),
               SizedBox(height: 15.h),
               // 用户信息
-              vm.needLogin
+              vm.user == null
                   ? _buildLoggedOutUserInfo()
                   : _buildLoggedInUserInfo(vm.user),
               SizedBox(height: 20.h),
               // 数据统计
-              _buildStatistic(vm.needLogin, vm.user),
+              _buildStatistic(vm.user),
             ],
           );
         },
@@ -102,7 +107,7 @@ class _PersonalPageState extends State<PersonalPage> {
     );
   }
 
-  Widget _buildUserAvatar(bool needLogin, UserBean? user) {
+  Widget _buildUserAvatar(UserBean? user) {
     final defaultAvatar = CircleAvatar(
       radius: 50.r,
       backgroundColor: Colors.grey[100],
@@ -121,7 +126,7 @@ class _PersonalPageState extends State<PersonalPage> {
           ),
         ],
       ),
-      child: (needLogin == false && user?.avatar?.isEmpty == false)
+      child: user?.avatar?.isEmpty == false
           ? CachedNetworkImage(
               imageUrl: user!.avatar!,
               imageBuilder: (context, imageProvider) {
@@ -207,7 +212,7 @@ class _PersonalPageState extends State<PersonalPage> {
     );
   }
 
-  Widget _buildStatistic(bool needLogin, UserBean? user) {
+  Widget _buildStatistic(UserBean? user) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 15.h),
       decoration: BoxDecoration(
@@ -218,7 +223,7 @@ class _PersonalPageState extends State<PersonalPage> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildStatItem(
-            value: needLogin ? "0" : "${user?.participationCount ?? 0}",
+            value: user == null ? "0" : "${user.participationCount ?? 0}",
             label: "参与回收次数",
             icon: Icons.recycling,
           ),
@@ -228,9 +233,9 @@ class _PersonalPageState extends State<PersonalPage> {
             color: Colors.grey[300],
           ),
           _buildStatItem(
-            value: needLogin
+            value: user == null
                 ? "0.00"
-                : (user?.totalRecycleAmount ?? 0).toStringAsFixed(2),
+                : (user.totalRecycleAmount ?? 0).toStringAsFixed(2),
             label: "累计回收金额(￥)",
             icon: Icons.payments_outlined,
           ),
@@ -296,10 +301,7 @@ class _PersonalPageState extends State<PersonalPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) {
-                      return SettingsPage(
-                        user: vm.user,
-                        needLogin: vm.needLogin,
-                      );
+                      return SettingsPage(user: vm.user);
                     }),
                   ).then((_) => _initUserData());
                 },
@@ -313,7 +315,7 @@ class _PersonalPageState extends State<PersonalPage> {
                       MaterialPageRoute(builder: (_) => const AboutUsPage()));
                 },
               ),
-              if (!vm.needLogin) ...[
+              if (vm.user != null) ...[
                 Divider(color: Colors.grey[300], thickness: 0.5.h),
                 _buildFunctionItem(
                   icon: Icons.exit_to_app_outlined,
@@ -400,15 +402,11 @@ class _PersonalPageState extends State<PersonalPage> {
 
   Future<void> _handleLogout() async {
     try {
-      final response = await DioInstance.instance.post("/api/logout");
+      final statusCode =
+          await Provider.of<AuthViewModel>(context, listen: false).logout();
 
       if (!mounted) return;
-      if (response.statusCode == 1000) {
-        final userId = await SpUtils.getInt(Constants.spUserId) ?? -1;
-        await DbHelper.instance.deleteUser(userId);
-        await SpUtils.remove(Constants.spUserId);
-
-        if (!mounted) return;
+      if (statusCode == 1000) {
         CustomHelper.showSnackBar(context, "退出登录成功");
 
         if (mounted) {

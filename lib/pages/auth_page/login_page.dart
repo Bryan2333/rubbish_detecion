@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
 import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/auth_page/forgot_password_page.dart';
 import 'package:rubbish_detection/pages/auth_page/register_page.dart';
@@ -15,7 +16,6 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _authViewModel = AuthViewModel();
 
   late TextEditingController _usernameController;
   late TextEditingController _passwordController;
@@ -357,7 +357,8 @@ class _LoginPageState extends State<LoginPage> {
     if (_formKey.currentState?.validate() == false) return;
 
     try {
-      final message = await _authViewModel.login(
+      final message =
+          await Provider.of<AuthViewModel>(context, listen: false).login(
         username: _usernameController.text.trim(),
         password: _passwordController.text.trim(),
         role: _selectedRoleNotifier.value,
