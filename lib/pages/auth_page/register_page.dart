@@ -96,7 +96,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 SizedBox(height: 20.h),
                 // 返回按钮
                 IconButton(
-                  icon: Icon(Icons.arrow_back_ios, size: 20.r),
+                  icon: const Icon(Icons.arrow_back_ios),
                   onPressed: () => Navigator.pop(context),
                 ),
                 SizedBox(height: 20.h),

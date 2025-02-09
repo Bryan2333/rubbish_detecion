@@ -122,10 +122,7 @@ class _QuizResultPageState extends State<QuizResultPage>
       ),
       leading: IconButton(
         onPressed: () => Navigator.pop(context),
-        icon: Icon(
-          Icons.arrow_back_ios,
-          size: 20.r,
-        ),
+        icon: const Icon(Icons.arrow_back_ios),
       ),
     );
   }

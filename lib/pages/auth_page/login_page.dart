@@ -66,7 +66,7 @@ class _LoginPageState extends State<LoginPage> {
                   SizedBox(height: 40.h),
                   // 返回按钮
                   IconButton(
-                    icon: Icon(Icons.arrow_back_ios, size: 20.r),
+                    icon: const Icon(Icons.arrow_back_ios),
                     onPressed: () {
                       Navigator.pop(context);
                     },

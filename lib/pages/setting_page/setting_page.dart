@@ -31,11 +31,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            size: 20.r,
-            color: Colors.black,
-          ),
+          icon: const Icon(Icons.arrow_back_ios),
           onPressed: () => Navigator.pop(context),
         ),
       ),

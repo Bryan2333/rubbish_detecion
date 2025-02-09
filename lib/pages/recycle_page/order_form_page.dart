@@ -85,7 +85,7 @@ class _OrderFormPageState extends State<OrderFormPage> {
         style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.w600),
       ),
       leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios, size: 20.r),
+        icon: const Icon(Icons.arrow_back_ios),
         onPressed: () => Navigator.of(context).pop(),
       ),
       centerTitle: true,

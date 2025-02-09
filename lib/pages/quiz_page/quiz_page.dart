@@ -151,7 +151,7 @@ class _QuizPageState extends State<QuizPage> {
         ),
       ),
       leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios, size: 20.r, color: Colors.black),
+        icon: const Icon(Icons.arrow_back_ios),
         onPressed: () => Navigator.pop(context),
       ),
     );

@@ -72,7 +72,7 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
             ),
           ),
           leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios, size: 20.r, color: Colors.white),
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
         ),
