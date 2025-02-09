@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_swiper_view/flutter_swiper_view.dart';
 import 'package:provider/provider.dart';
+import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/collection_page/collection_page.dart';
 import 'package:rubbish_detection/pages/record_page/record_page.dart';
 import 'package:rubbish_detection/utils/custom_helper.dart';
@@ -260,7 +261,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _navigateToCollectionPage() {
+  void _navigateToCollectionPage() async {
+    if (!await Provider.of<AuthViewModel>(context, listen: false).isLogged()) {
+      if (!mounted) return;
+      CustomHelper.showSnackBar(context, "请先登录", success: false);
+      return;
+    }
+
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(

@@ -47,6 +47,8 @@ class DioInstance {
     _dio.options.baseUrl = baseurl;
   }
 
+  String get baseURL => _dio.options.baseUrl;
+
   // 封装GET请求
   Future<Response> get(String path, {Map<String, dynamic>? params}) async {
     return await _dio.get(path, queryParameters: params);

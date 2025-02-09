@@ -1,19 +1,26 @@
+import 'dart:convert';
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/recognization_result_page/recognization_result_vm.dart';
+import 'package:rubbish_detection/repository/api.dart';
 import 'package:rubbish_detection/repository/data/rubbish_data.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 
 class RecognizationResultPage extends StatefulWidget {
   const RecognizationResultPage({
     super.key,
     this.imagePath,
     required this.rubbishName,
+    this.isCollected = false,
   });
 
   final String? imagePath;
   final String rubbishName;
+  final bool isCollected;
 
   @override
   State<RecognizationResultPage> createState() =>
@@ -53,18 +60,36 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
     };
   }
 
-  void _addCollection() {
-    // TODO: 调用后端接口将识别结果添加到收藏
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: const Color(0xFF00CE68).withValues(alpha: 0.8),
-        content: Text(
-          "已添加到识别收藏",
-          style: TextStyle(fontSize: 16.sp, color: Colors.white),
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+  void _addCollection(Rubbish rubbish) async {
+    final userId =
+        await Provider.of<AuthViewModel>(context, listen: false).getUserId();
+
+    if (!mounted) return;
+    if (userId == -1) {
+      CustomHelper.showSnackBar(context, "请先登录", success: false);
+      return;
+    }
+
+    try {
+      final message = await Api.instance.addCollection(
+        userId,
+        _nameController.text.trim(),
+        rubbish.type!,
+        DateTime.now().toIso8601String(),
+        widget.imagePath?.isNotEmpty == true
+            ? base64Encode(File(widget.imagePath!).readAsBytesSync())
+            : null,
+      );
+
+      if (!mounted) return;
+      if (message == null) {
+        CustomHelper.showSnackBar(context, "添加成功");
+      } else {
+        CustomHelper.showSnackBar(context, "添加失败：$message", success: false);
+      }
+    } catch (e) {
+      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
+    }
   }
 
   void _submitName() {
@@ -79,15 +104,13 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
     return ChangeNotifierProvider(
       create: (context) => _recognizationViewModel,
       child: Scaffold(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: Colors.white,
         appBar: _buildAppBar(),
         body: Consumer<RecognizationResultViewModel>(
             builder: (context, vm, child) {
           if (vm.isLoading) {
             return const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF00CE68),
-              ),
+              child: CircularProgressIndicator(color: Color(0xFF00CE68)),
             );
           } else if (vm.rubbishList.isEmpty) {
             return _buildFailedContent();
@@ -101,15 +124,14 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
 
   AppBar _buildAppBar() {
     return AppBar(
-      elevation: 0,
       backgroundColor: Colors.white,
       centerTitle: true,
       title: Text(
         "识别结果",
-        style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold),
+        style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.w600),
       ),
       leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios, size: 20.r),
+        icon: const Icon(Icons.arrow_back_ios),
         onPressed: () => Navigator.pop(context),
       ),
     );
@@ -167,12 +189,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20.r),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withValues(alpha: 0.1),
-                    blurRadius: 15.r,
-                    spreadRadius: 5.r,
-                    offset: const Offset(0, 5),
-                  ),
+                  BoxShadow(color: Colors.grey[300]!, blurRadius: 15.r),
                 ],
               ),
               child: Column(
@@ -189,7 +206,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
               ),
             ),
             // 收藏按钮
-            _buildCollectButton(),
+            if (!widget.isCollected) _buildCollectButton(rubbish),
           ],
         ),
       ),
@@ -198,7 +215,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
 
   Widget _buildImageField() {
     return Container(
-      margin: EdgeInsets.only(top: 24.h),
+      margin: EdgeInsets.symmetric(vertical: 20.h),
       padding: EdgeInsets.all(8.r),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20.r),
@@ -206,41 +223,57 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16.r),
-        child: Image.file(
-          File(widget.imagePath!),
-          width: 180.w,
-          height: 140.h,
-          fit: BoxFit.cover,
-        ),
+        child: _buildImageWidget(),
       ),
     );
   }
 
+  Widget _buildImageWidget() {
+    final path = widget.imagePath!;
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+      return CachedNetworkImage(
+        imageUrl: path,
+        width: 180.w,
+        height: 140.h,
+        fit: BoxFit.cover,
+        placeholder: (_, __) =>
+            const CircularProgressIndicator(color: Color(0xFF00CE68)),
+        errorWidget: (_, __, ___) => const Icon(Icons.broken_image_outlined),
+      );
+    } else {
+      return Image.file(
+        File(path),
+        width: 180.w,
+        height: 140.h,
+        fit: BoxFit.contain,
+      );
+    }
+  }
+
   Widget _buildNameField() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+      padding: EdgeInsets.symmetric(horizontal: 30.w),
       child: ValueListenableBuilder(
         valueListenable: _isEditingNotifier,
         builder: (context, isEditing, child) {
           return Column(
             children: [
-              GestureDetector(
-                onTap: () => _isEditingNotifier.value = true,
-                child: isEditing
-                    ? _buildEditableNameField()
-                    : Text(
+              isEditing
+                  ? _buildEditableNameField()
+                  : GestureDetector(
+                      onTap: () => _isEditingNotifier.value = true,
+                      child: Text(
                         _nameController.text,
                         style: TextStyle(
                           fontSize: 26.sp,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-              ),
+                    ),
               SizedBox(height: 8.h),
               // 编辑提示
-              Offstage(
-                offstage: isEditing,
-                child: Row(
+              if (!isEditing)
+                Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
@@ -258,7 +291,6 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
                     ),
                   ],
                 ),
-              ),
             ],
           );
         },
@@ -268,9 +300,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
 
   Widget _buildEditableNameField() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color(0xFF00CE68)),
       ),
@@ -282,7 +312,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
               controller: _nameController,
               autofocus: true,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.w600),
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 hintText: '请输入名称',
@@ -311,7 +341,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
 
   Widget _buildIconField(int type) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 16.h),
+      margin: EdgeInsets.symmetric(vertical: 20.h),
       child: Image.asset(_typeImage(type), height: 150.w),
     );
   }
@@ -340,7 +370,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
               SizedBox(width: 8.w),
               Text(
                 "处理建议",
-                style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -384,9 +414,9 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
         [const SizedBox.shrink()];
   }
 
-  Widget _buildCollectButton() {
+  Widget _buildCollectButton(Rubbish rubbish) {
     return GestureDetector(
-      onTap: _addCollection,
+      onTap: () => _addCollection(rubbish),
       child: Container(
         margin: EdgeInsets.only(top: 24.h),
         padding: EdgeInsets.symmetric(vertical: 16.h),

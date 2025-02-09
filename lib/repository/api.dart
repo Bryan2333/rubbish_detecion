@@ -251,4 +251,68 @@ class Api {
 
     return response.statusCode;
   }
+
+  Future<String?> addCollection(
+    int userId,
+    String rubbishName,
+    int rubbishType,
+    String createdAt,
+    String? image,
+  ) async {
+    final response = await DioInstance.instance.post(
+      "/api/collection/add",
+      data: {
+        "userId": userId,
+        "rubbishName": rubbishName,
+        "rubbishType": rubbishType,
+        "image": image,
+        "createdAt": createdAt
+      },
+    );
+
+    return response.statusCode == 1000 ? null : response.statusMessage;
+  }
+
+  Future<List<RecognitionCollectionBean>?> getCollectionByPage(
+    int userId, [
+    int pageNum = 1,
+    int pageSize = 5,
+  ]) async {
+    final response = await DioInstance.instance.post(
+      "/api/collection/findByPage",
+      queryParameters: {
+        "userId": userId,
+        "pageNum": pageNum,
+        "pageSize": pageSize,
+      },
+    );
+
+    if (response.data is! List) {
+      return null;
+    }
+
+    final collectionJsonList = response.data as List;
+    final collections = collectionJsonList.map((json) {
+      final collection =
+          RecognitionCollectionBean.fromJson(json as Map<String, dynamic>);
+      if (collection.image?.isNotEmpty == true) {
+        collection.image = DioInstance.instance.baseURL + collection.image!;
+      }
+      return collection;
+    }).toList();
+
+    return collections;
+  }
+
+  Future<int?> unCollectRecognition(int collectionId, int userId) async {
+    final response = await DioInstance.instance.post(
+      "/api/collection/unCollect",
+      queryParameters: {
+        "id": collectionId,
+        "userId": userId,
+      },
+    );
+
+    return response.statusCode;
+  }
 }

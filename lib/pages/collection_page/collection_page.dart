@@ -1,28 +1,14 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:pull_to_refresh_flutter3/pull_to_refresh_flutter3.dart';
+import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/collection_page/collection_vm.dart';
 import 'package:rubbish_detection/pages/recognization_result_page/recognization_result_page.dart';
-
-class RecognitionCollection {
-  final int id;
-  final String rubbishName;
-  final String? imagePath;
-  final int rubbishType;
-  final DateTime createdTime;
-  final bool isDeleted;
-
-  RecognitionCollection({
-    required this.id,
-    required this.rubbishName,
-    this.imagePath,
-    required this.rubbishType,
-    required this.createdTime,
-    required this.isDeleted,
-  });
-}
+import 'package:rubbish_detection/repository/data/recognition_collection_bean.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 
 class CollectionPage extends StatefulWidget {
   const CollectionPage({super.key});
@@ -34,11 +20,11 @@ class CollectionPage extends StatefulWidget {
 class _CollectionPageState extends State<CollectionPage>
     with SingleTickerProviderStateMixin {
   final _collectionViewModel = CollectionViewModel();
-  final _dateFormatter = DateFormat('yyyy-MM-dd HH:mm');
+  final _dateFormatter = DateFormat("yyyy-MM-ddTHH:mm:ss");
 
   late RefreshController _refreshController;
 
-  Color _getTypeColor(int type) {
+  Color _getTypeColor(int? type) {
     return switch (type) {
       0 => const Color(0xFFFFA721),
       1 => const Color(0xFF4DB8FF),
@@ -48,7 +34,7 @@ class _CollectionPageState extends State<CollectionPage>
     };
   }
 
-  String _getTypeIcon(int type) {
+  String _getTypeIcon(int? type) {
     return switch (type) {
       0 => "assets/images/solid_waste_3.png",
       1 => "assets/images/food_waste_3.png",
@@ -58,7 +44,7 @@ class _CollectionPageState extends State<CollectionPage>
     };
   }
 
-  String _getTypeName(int type) {
+  String _getTypeName(int? type) {
     return switch (type) {
       0 => "干垃圾",
       1 => "湿垃圾",
@@ -68,14 +54,15 @@ class _CollectionPageState extends State<CollectionPage>
     };
   }
 
-  Future<void> _refreshOrLoad({required isLoad}) async {
+  Future<void> _refreshOrLoad({bool isLoad = false}) async {
+    final userId =
+        await Provider.of<AuthViewModel>(context, listen: false).getUserId();
+
     if (isLoad) {
-      // TODO: 在CollectionViewModel中实现加载更多逻辑
-      await Future.delayed(const Duration(milliseconds: 500));
+      _collectionViewModel.getCollections(userId: userId, loadMore: true);
       _refreshController.loadComplete();
     } else {
-      // TODO: 在CollectionViewModel中实现刷新逻辑
-      await Future.delayed(const Duration(milliseconds: 500));
+      _collectionViewModel.getCollections(userId: userId, loadMore: false);
       _refreshController.refreshCompleted();
     }
   }
@@ -84,7 +71,7 @@ class _CollectionPageState extends State<CollectionPage>
   void initState() {
     super.initState();
     _refreshController = RefreshController();
-    _collectionViewModel.getCollections();
+    _refreshOrLoad();
   }
 
   @override
@@ -98,16 +85,8 @@ class _CollectionPageState extends State<CollectionPage>
     return ChangeNotifierProvider(
       create: (_) => _collectionViewModel,
       child: Scaffold(
-        backgroundColor: Colors.grey[50],
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: Colors.white,
-          title: Text(
-            "识别收藏",
-            style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
-          ),
-          centerTitle: true,
-        ),
+        backgroundColor: Colors.white,
+        appBar: _buildAppBar(),
         body: SmartRefresher(
           controller: _refreshController,
           enablePullDown: true,
@@ -136,6 +115,21 @@ class _CollectionPageState extends State<CollectionPage>
     );
   }
 
+  AppBar _buildAppBar() {
+    return AppBar(
+      backgroundColor: Colors.white,
+      title: Text(
+        "识别收藏",
+        style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.w600),
+      ),
+      centerTitle: true,
+      leading: IconButton(
+        onPressed: () => Navigator.pop(context),
+        icon: const Icon(Icons.arrow_back_ios),
+      ),
+    );
+  }
+
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -156,7 +150,7 @@ class _CollectionPageState extends State<CollectionPage>
     );
   }
 
-  Widget _buildCollectionsList(List<RecognitionCollection> collections) {
+  Widget _buildCollectionsList(List<RecognitionCollectionBean> collections) {
     return SingleChildScrollView(
       child: ListView.builder(
         shrinkWrap: true,
@@ -170,17 +164,16 @@ class _CollectionPageState extends State<CollectionPage>
     );
   }
 
-  Widget _buildCollectionCard(RecognitionCollection collection) {
+  Widget _buildCollectionCard(RecognitionCollectionBean collection) {
     return Container(
-      margin: EdgeInsets.only(bottom: 16.h),
+      margin: EdgeInsets.only(bottom: 20.h),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10.r,
-            offset: const Offset(0, 2),
+            color: Colors.grey[300]!,
+            blurRadius: 8.r,
           ),
         ],
       ),
@@ -192,8 +185,9 @@ class _CollectionPageState extends State<CollectionPage>
               context,
               MaterialPageRoute(
                 builder: (_) => RecognizationResultPage(
-                  rubbishName: collection.rubbishName,
-                  imagePath: collection.imagePath,
+                  rubbishName: collection.rubbishName ?? "",
+                  imagePath: collection.image,
+                  isCollected: true,
                 ),
               ),
             );
@@ -204,90 +198,12 @@ class _CollectionPageState extends State<CollectionPage>
             child: Row(
               children: [
                 // 左侧统一显示圆形区域
-                Container(
-                  width: 80.w,
-                  height: 80.w,
-                  margin: EdgeInsets.only(right: 16.w),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _getTypeColor(collection.rubbishType),
-                  ),
-                  child: collection.imagePath != null
-                      // 有图片时显示圆形图片
-                      ? ClipOval(
-                          child: Image.asset(
-                            collection.imagePath!,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      // 无图片时显示类型图标
-                      : Container(
-                          alignment: Alignment.center,
-                          padding: EdgeInsets.all(15.r),
-                          child:
-                              Image.asset(_getTypeIcon(collection.rubbishType)),
-                        ),
-                ),
+                _buildImageField(collection),
                 // 右侧信息布局保持不变
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        collection.rubbishName,
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8.w,
-                          vertical: 4.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getTypeColor(collection.rubbishType)
-                              .withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        child: Text(
-                          _getTypeName(collection.rubbishType),
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: _getTypeColor(collection.rubbishType),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-                      Text(
-                        _dateFormatter.format(collection.createdTime),
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _buildInfoField(collection),
                 IconButton(
                   icon: Icon(Icons.favorite, color: Colors.red, size: 24.r),
-                  onPressed: () async {
-                    if (await _collectionViewModel.unCollect(collection)) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: const Color(0xFF00CE68),
-                            content: Text(
-                              "取消收藏成功",
-                              style: TextStyle(fontSize: 16.sp),
-                            ),
-                            duration: const Duration(seconds: 1),
-                          ),
-                        );
-                      }
-                    }
-                  },
+                  onPressed: () => _handleUnCollect(collection),
                 ),
               ],
             ),
@@ -295,5 +211,97 @@ class _CollectionPageState extends State<CollectionPage>
         ),
       ),
     );
+  }
+
+  Widget _buildImageField(RecognitionCollectionBean collection) {
+    return Container(
+      width: 80.w,
+      height: 80.w,
+      margin: EdgeInsets.only(right: 16.w),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: _getTypeColor(collection.rubbishType),
+      ),
+      child: collection.image != null
+          // 有图片时显示圆形图片
+          ? CachedNetworkImage(
+              imageUrl: collection.image!,
+              imageBuilder: (context, imageProvider) {
+                return Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                      image: imageProvider,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                );
+              },
+              fit: BoxFit.cover,
+              placeholder: (_, __) =>
+                  const CircularProgressIndicator(color: Color(0xFF00CE68)),
+              errorWidget: (_, __, ___) =>
+                  const Icon(Icons.broken_image_outlined, color: Colors.grey),
+            )
+          // 无图片时显示类型图标
+          : Container(
+              alignment: Alignment.center,
+              padding: EdgeInsets.all(15.r),
+              child: Image.asset(_getTypeIcon(collection.rubbishType)),
+            ),
+    );
+  }
+
+  Widget _buildInfoField(RecognitionCollectionBean collection) {
+    final DateTime(:year, :month, :day, :hour, :minute) =
+        _dateFormatter.parse(collection.createdAt!);
+
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            collection.rubbishName!,
+            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
+          ),
+          SizedBox(height: 8.h),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+            decoration: BoxDecoration(
+              color: _getTypeColor(collection.rubbishType!)
+                  .withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: Text(
+              _getTypeName(collection.rubbishType),
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: _getTypeColor(collection.rubbishType),
+              ),
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            "$year年$month月$day日 $hour:$minute",
+            style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleUnCollect(RecognitionCollectionBean collection) async {
+    try {
+      final uncollected = await _collectionViewModel.unCollect(collection);
+
+      if (!mounted) return;
+      if (uncollected) {
+        CustomHelper.showSnackBar(context, "取消收藏成功");
+      } else {
+        CustomHelper.showSnackBar(context, "取消收藏失败", success: false);
+      }
+    } catch (e) {
+      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
+    }
   }
 }

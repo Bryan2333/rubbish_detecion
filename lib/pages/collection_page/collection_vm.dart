@@ -1,61 +1,34 @@
 import 'dart:developer';
-
 import 'package:flutter/foundation.dart';
-import 'package:rubbish_detection/pages/collection_page/collection_page.dart';
+import 'package:rubbish_detection/repository/api.dart';
+import 'package:rubbish_detection/repository/data/recognition_collection_bean.dart';
 
 class CollectionViewModel with ChangeNotifier {
   bool isLoading = false;
-  final List<RecognitionCollection> _mockData = [
-    RecognitionCollection(
-      id: 1,
-      rubbishName: '塑料瓶',
-      rubbishType: 2,
-      createdTime: DateTime.now(),
-      imagePath: null,
-      isDeleted: true,
-    ),
-    RecognitionCollection(
-      id: 2,
-      rubbishName: '玻璃',
-      rubbishType: 0,
-      createdTime: DateTime.now(),
-      imagePath: null,
-      isDeleted: true,
-    ),
-    RecognitionCollection(
-      id: 3,
-      rubbishName: '凉鞋',
-      rubbishType: 0,
-      createdTime: DateTime.now(),
-      imagePath: null,
-      isDeleted: true,
-    ),
-    RecognitionCollection(
-      id: 4,
-      rubbishName: '蓄电池',
-      rubbishType: 3,
-      createdTime: DateTime.now(),
-      imagePath: null,
-      isDeleted: true,
-    ),
-    RecognitionCollection(
-      id: 5,
-      rubbishName: '苹果皮',
-      rubbishType: 1,
-      createdTime: DateTime.now(),
-      imagePath: null,
-      isDeleted: true,
-    ),
-  ];
+  bool hasMore = true;
+  int currentPage = 1;
+  final defaultPageSize = 10;
 
-  final collections = <RecognitionCollection>[];
+  final collections = <RecognitionCollectionBean>[];
 
-  Future<void> getCollections() async {
+  Future<void> getCollections(
+      {required int userId, required bool loadMore}) async {
+    isLoading = true;
+    notifyListeners();
+
     try {
-      isLoading = true;
-      // Simulate network request
-      await Future.delayed(const Duration(milliseconds: 200));
-      collections.addAll(_mockData);
+      if (loadMore) {
+        currentPage++;
+      } else {
+        currentPage = 1;
+        collections.clear();
+        hasMore = true;
+      }
+
+      final list = await Api.instance
+          .getCollectionByPage(userId, currentPage, defaultPageSize);
+
+      collections.addAll(list ?? []);
     } catch (e) {
       log("Error fetching collected records: $e");
     } finally {
@@ -64,13 +37,16 @@ class CollectionViewModel with ChangeNotifier {
     }
   }
 
-  Future<bool> unCollect(RecognitionCollection collection) async {
+  Future<bool> unCollect(RecognitionCollectionBean collection) async {
     try {
-      // Simulate network request
-      await Future.delayed(const Duration(milliseconds: 200));
-      return collections.remove(collection);
-    } catch (e) {
-      log("Error uncollecting record: $e");
+      final statusCode = await Api.instance
+          .unCollectRecognition(collection.id!, collection.userId!);
+
+      if (statusCode == 1000) {
+        collections.removeWhere((test) => test.id == collection.id);
+        return true;
+      }
+
       return false;
     } finally {
       notifyListeners();
