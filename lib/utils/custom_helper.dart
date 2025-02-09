@@ -8,8 +8,11 @@ class CustomHelper {
     bool defaultStyle = false,
     bool success = true,
   }) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
       SnackBar(
+        behavior: SnackBarBehavior.floating,
         backgroundColor: defaultStyle
             ? null
             : (success ? const Color(0xFF00CE68) : Colors.red),
