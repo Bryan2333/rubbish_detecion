@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:rubbish_detection/repository/api.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 
 class FeedbackPage extends StatefulWidget {
   const FeedbackPage({super.key});
@@ -46,17 +47,18 @@ class _FeedbackPageState extends State<FeedbackPage> {
           _emailController.text.trim(),
           _feedbackController.text.trim());
 
+      if (!mounted) return;
       if (statusCode == 1000) {
-        _showSnackBar("提交成功，感谢您的反馈");
+        CustomHelper.showSnackBar(context, "提交成功，感谢您的反馈");
         // 清空输入框
         _nameController.clear();
         _emailController.clear();
         _feedbackController.clear();
       } else {
-        _showSnackBar("提交失败，请稍后再试", success: false);
+        CustomHelper.showSnackBar(context, "提交失败，请稍后再试", success: false);
       }
     } catch (e) {
-      _showSnackBar("网络异常，请稍后再试", success: false);
+      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
     }
   }
 
@@ -218,20 +220,5 @@ class _FeedbackPageState extends State<FeedbackPage> {
         ),
       ),
     );
-  }
-
-  void _showSnackBar(String message, {bool success = true}) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: success ? const Color(0xFF00CE68) : Colors.red,
-          content: Text(
-            message,
-            style: TextStyle(fontSize: 16.sp, color: Colors.white),
-          ),
-          duration: Duration(seconds: success ? 2 : 5),
-        ),
-      );
-    }
   }
 }

@@ -4,6 +4,7 @@ import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/auth_page/forgot_password_page.dart';
 import 'package:rubbish_detection/pages/auth_page/register_page.dart';
 import 'package:rubbish_detection/pages/tab_page/tab_page.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -362,8 +363,9 @@ class _LoginPageState extends State<LoginPage> {
         role: _selectedRoleNotifier.value,
       );
 
+      if (!mounted) return;
       if (message == null) {
-        _showSnackBar("登录成功", success: true);
+        CustomHelper.showSnackBar(context, "登录成功", success: true);
 
         await Future.delayed(const Duration(milliseconds: 1500));
 
@@ -375,25 +377,11 @@ class _LoginPageState extends State<LoginPage> {
           );
         }
       } else {
-        _showSnackBar("登录失败：$message", success: false);
+        CustomHelper.showSnackBar(context, "登录失败：$message", success: false);
       }
     } catch (e) {
-      _showSnackBar("网络异常，请稍后再试", success: false);
-    }
-  }
-
-  void _showSnackBar(String message, {bool success = true}) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: success ? const Color(0xFF00CE68) : Colors.red,
-          content: Text(
-            message,
-            style: TextStyle(fontSize: 16.sp, color: Colors.white),
-          ),
-          duration: Duration(seconds: success ? 2 : 5),
-        ),
-      );
+      if (!mounted) return;
+      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
     }
   }
 }

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rubbish_detection/pages/auth_page/login_page.dart';
 import 'package:rubbish_detection/repository/api.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 import 'package:rubbish_detection/utils/image_helper.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -657,14 +658,15 @@ class _RegisterPageState extends State<RegisterPage> {
       final message = await Api.instance
           .getRegisterVerifyCode(_emailController.text.trim());
 
+      if (!mounted) return;
       if (message == null) {
-        _showSnackBar("验证码发送成功，请检查您的邮箱", success: true);
+        CustomHelper.showSnackBar(context, "验证码发送成功，请检查您的邮箱", success: true);
         _startCountdown();
       } else {
-        _showSnackBar("获取验证码失败：$message", success: false);
+        CustomHelper.showSnackBar(context, "获取验证码失败：$message", success: false);
       }
     } catch (e) {
-      _showSnackBar("网络异常，请稍后重试", success: false);
+      CustomHelper.showSnackBar(context, "网络异常，请稍后重试", success: false);
     }
   }
 
@@ -687,8 +689,9 @@ class _RegisterPageState extends State<RegisterPage> {
             : null,
       );
 
+      if (!mounted) return;
       if (message == null) {
-        _showSnackBar("注册成功");
+        CustomHelper.showSnackBar(context, "注册成功");
 
         _usernameController.clear();
         _passwordController.clear();
@@ -711,25 +714,11 @@ class _RegisterPageState extends State<RegisterPage> {
           );
         }
       } else {
-        _showSnackBar("注册失败：$message", success: false);
+        CustomHelper.showSnackBar(context, "注册失败：$message", success: false);
       }
     } catch (e) {
-      _showSnackBar("网络异常，请稍后重试", success: false);
-    }
-  }
-
-  void _showSnackBar(String message, {bool success = true}) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: success ? const Color(0xFF00CE68) : Colors.red,
-          content: Text(
-            message,
-            style: TextStyle(fontSize: 16.sp, color: Colors.white),
-          ),
-          duration: Duration(seconds: success ? 2 : 5),
-        ),
-      );
+      if (!mounted) return;
+      CustomHelper.showSnackBar(context, "网络异常，请稍后重试", success: false);
     }
   }
 }

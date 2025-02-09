@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rubbish_detection/repository/api.dart';
 import 'package:rubbish_detection/repository/data/user_bean.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key, required this.user});
@@ -470,14 +471,15 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       final message =
           await Api.instance.getChangePasswordVerifyCode(widget.user.id!);
 
+      if (!mounted) return;
       if (message == null) {
-        _showSnackBar("验证码发送成功，请检查您的邮箱");
+        CustomHelper.showSnackBar(context, "验证码发送成功，请检查您的邮箱");
         _startCountdown();
       } else {
-        _showSnackBar("获取验证码失败：$message", success: false);
+        CustomHelper.showSnackBar(context, "获取验证码失败：$message", success: false);
       }
     } catch (e) {
-      _showSnackBar("网络异常，请稍后再试", success: false);
+      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
     }
   }
 
@@ -494,8 +496,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           _confirmPasswordController.text.trim(),
           _verificationCodeController.text.trim());
 
+      if (!mounted) return;
       if (message == null) {
-        _showSnackBar("修改密码成功");
+        CustomHelper.showSnackBar(context, "修改密码成功");
         _oldPasswordController.clear();
         _newPasswordController.clear();
         _confirmPasswordController.clear();
@@ -505,25 +508,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         _isCodeSentNotifier.value = false;
         _timer?.cancel();
       } else {
-        _showSnackBar("修改密码失败：$message", success: false);
+        CustomHelper.showSnackBar(context, "修改密码失败：$message", success: false);
       }
     } catch (e) {
-      _showSnackBar("网络异常，请稍后再试", success: false);
-    }
-  }
-
-  void _showSnackBar(String message, {bool success = true}) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: success ? const Color(0xFF00CE68) : Colors.red,
-          content: Text(
-            message,
-            style: TextStyle(fontSize: 16.sp, color: Colors.white),
-          ),
-          duration: Duration(seconds: success ? 2 : 5),
-        ),
-      );
+      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
     }
   }
 }

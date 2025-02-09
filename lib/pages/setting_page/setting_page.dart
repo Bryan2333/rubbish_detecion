@@ -227,16 +227,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "缓存清理完毕",
-            style: TextStyle(fontSize: 16.sp),
-          ),
-          backgroundColor: const Color(0xFF00CE68),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      CustomHelper.showSnackBar(context, "缓存清理完毕");
     }
   }
 }

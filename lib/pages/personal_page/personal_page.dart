@@ -11,6 +11,7 @@ import 'package:rubbish_detection/pages/setting_page/feedback_page.dart';
 import 'package:rubbish_detection/pages/setting_page/setting_page.dart';
 import 'package:rubbish_detection/pages/tab_page/tab_page.dart';
 import 'package:rubbish_detection/repository/data/user_bean.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 import 'package:rubbish_detection/utils/db_helper.dart';
 import 'package:rubbish_detection/utils/sp_helper.dart';
 
@@ -401,12 +402,14 @@ class _PersonalPageState extends State<PersonalPage> {
     try {
       final response = await DioInstance.instance.post("/api/logout");
 
+      if (!mounted) return;
       if (response.statusCode == 1000) {
         final userId = await SpUtils.getInt(Constants.spUserId) ?? -1;
         await DbHelper.instance.deleteUser(userId);
         await SpUtils.remove(Constants.spUserId);
 
-        _showSnackBar("退出登录成功");
+        if (!mounted) return;
+        CustomHelper.showSnackBar(context, "退出登录成功");
 
         if (mounted) {
           Navigator.pushAndRemoveUntil(
@@ -416,25 +419,10 @@ class _PersonalPageState extends State<PersonalPage> {
           );
         }
       } else {
-        _showSnackBar("退出登录失败", success: false);
+        CustomHelper.showSnackBar(context, "退出登录失败", success: false);
       }
     } catch (e) {
-      _showSnackBar("网络异常，请稍后重试", success: false);
-    }
-  }
-
-  void _showSnackBar(String message, {bool success = true}) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: success ? const Color(0xFF00CE68) : Colors.red,
-          content: Text(
-            message,
-            style: TextStyle(fontSize: 16.sp, color: Colors.white),
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      CustomHelper.showSnackBar(context, "网络异常，请稍后重试", success: false);
     }
   }
 }

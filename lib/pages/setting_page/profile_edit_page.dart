@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rubbish_detection/repository/api.dart';
 import 'package:rubbish_detection/repository/data/user_bean.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 import 'package:rubbish_detection/utils/db_helper.dart';
 import 'package:rubbish_detection/utils/image_helper.dart';
 
@@ -66,12 +67,13 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
       if (message == null) {
         await DbHelper.instance.updateUser(user!);
-        _showSnackBar("用户信息更新成功");
+        if (!mounted) return;
+        CustomHelper.showSnackBar(context, "用户信息更新成功");
       } else {
-        _showSnackBar("用户信息更新失败：$message", success: false);
+        CustomHelper.showSnackBar(context, "用户信息更新失败：$message", success: false);
       }
     } catch (e) {
-      _showSnackBar("网络异常，请稍后再试", success: false);
+      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
     }
   }
 
@@ -353,20 +355,5 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         ),
       ),
     );
-  }
-
-  void _showSnackBar(String message, {bool success = true}) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: success ? const Color(0xFF00CE68) : Colors.red,
-          content: Text(
-            message,
-            style: TextStyle(fontSize: 16.sp, color: Colors.white),
-          ),
-          duration: Duration(seconds: success ? 2 : 5),
-        ),
-      );
-    }
   }
 }

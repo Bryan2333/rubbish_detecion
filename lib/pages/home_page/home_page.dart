@@ -5,6 +5,7 @@ import 'package:flutter_swiper_view/flutter_swiper_view.dart';
 import 'package:provider/provider.dart';
 import 'package:rubbish_detection/pages/collection_page/collection_page.dart';
 import 'package:rubbish_detection/pages/record_page/record_page.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 import 'package:rubbish_detection/utils/image_classification_helper.dart';
 import 'package:image/image.dart' as image_lib;
 import 'package:rubbish_detection/pages/home_page/home_vm.dart';
@@ -477,15 +478,7 @@ class _HomePageState extends State<HomePage> {
 
     if (topIndex < 400) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "识别失败，请重新尝试",
-              style: TextStyle(fontSize: 16),
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
+        CustomHelper.showSnackBar(context, "识别失败，请重新尝试", success: false);
       }
       return null;
     }

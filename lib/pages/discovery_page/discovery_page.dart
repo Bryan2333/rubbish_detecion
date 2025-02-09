@@ -7,6 +7,7 @@ import 'package:rubbish_detection/pages/discovery_page/discovery_vm.dart';
 import 'package:rubbish_detection/pages/quiz_page/quiz_page.dart';
 import 'package:rubbish_detection/pages/recycle_page/recycle_page.dart';
 import 'package:rubbish_detection/repository/data/news_bean.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 import 'package:rubbish_detection/widget/web/webview_page.dart';
 
 class DiscoveryPage extends StatefulWidget {
@@ -42,15 +43,7 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
   Future<void> _refreshOrLoad({required bool isLoad}) async {
     if (isLoad) {
       if (_discoveryViewModel.hasMore == false) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "没有更多新闻了",
-              style: TextStyle(fontSize: 16.sp),
-            ),
-            duration: const Duration(seconds: 1),
-          ),
-        );
+        CustomHelper.showSnackBar(context, "没有更多新闻了", defaultStyle: true);
       } else {
         _discoveryViewModel.getNews(loadMore: true);
       }

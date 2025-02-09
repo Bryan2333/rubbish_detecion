@@ -8,6 +8,7 @@ import 'package:record/record.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rubbish_detection/pages/recognization_result_page/recognization_result_page.dart';
 import 'package:rubbish_detection/pages/record_page/record_vm.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 
 class RecordPage extends StatefulWidget {
   const RecordPage({super.key});
@@ -257,16 +258,7 @@ class _RecordPageState extends State<RecordPage>
       _animationController.repeat(reverse: true);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 2),
-            content: Text(
-              "请先授予录音权限",
-              style: TextStyle(fontSize: 16.sp),
-            ),
-          ),
-        );
+        CustomHelper.showSnackBar(context, "请先授予录音权限", success: false);
       }
     }
   }
@@ -303,16 +295,7 @@ class _RecordPageState extends State<RecordPage>
     }
 
     if (res?.result?.isEmpty == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 2),
-          content: Text(
-            "识别失败，请重新尝试",
-            style: TextStyle(fontSize: 16.sp),
-          ),
-        ),
-      );
+      CustomHelper.showSnackBar(context, "识别失败，请重新尝试", success: false);
     } else {
       Navigator.push(
         context,
