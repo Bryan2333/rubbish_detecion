@@ -118,7 +118,7 @@ class _QuizResultPageState extends State<QuizResultPage>
       centerTitle: true,
       title: Text(
         "测验结果",
-        style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold),
+        style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.w600),
       ),
       leading: IconButton(
         onPressed: () => Navigator.pop(context),
@@ -155,7 +155,7 @@ class _QuizResultPageState extends State<QuizResultPage>
           _getResultComment(percentage),
           style: TextStyle(
             fontSize: 28.sp,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
             color: const Color(0xFF00CE68),
           ),
         ),
@@ -176,7 +176,7 @@ class _QuizResultPageState extends State<QuizResultPage>
                 "${(percentage * 100 * _scoreAnimation.value).toInt()}%",
                 style: TextStyle(
                   fontSize: 48.sp,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
                   color: Colors.black,
                 ),
               ),
@@ -290,7 +290,7 @@ class _QuizResultPageState extends State<QuizResultPage>
               text,
               style: TextStyle(
                 fontSize: 16.sp,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
                 color: isOutlined ? const Color(0xFF00CE68) : Colors.white,
               ),
             ),

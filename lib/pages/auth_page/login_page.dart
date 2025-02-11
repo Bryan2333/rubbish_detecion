@@ -77,7 +77,7 @@ class _LoginPageState extends State<LoginPage> {
                     "欢迎回来",
                     style: TextStyle(
                       fontSize: 28.sp,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
                   ),
@@ -311,7 +311,7 @@ class _LoginPageState extends State<LoginPage> {
           style: TextStyle(
             color: Colors.white,
             fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -345,7 +345,7 @@ class _LoginPageState extends State<LoginPage> {
             style: TextStyle(
               color: const Color(0xFF04C264),
               fontSize: 14.sp,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),

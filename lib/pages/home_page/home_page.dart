@@ -66,7 +66,7 @@ class _HomePageState extends State<HomePage> {
           "垃圾分类助手",
           style: TextStyle(
             fontSize: 24.sp,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
             color: Colors.black,
           ),
         ),
@@ -220,7 +220,7 @@ class _HomePageState extends State<HomePage> {
             "智能识别",
             style: TextStyle(
               fontSize: 20.sp,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
               color: Colors.black,
             ),
           ),
@@ -337,7 +337,7 @@ class _HomePageState extends State<HomePage> {
               "垃圾分类指南",
               style: TextStyle(
                 fontSize: 20.sp,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
                 color: Colors.black,
               ),
             ),
@@ -432,7 +432,7 @@ class _HomePageState extends State<HomePage> {
                       title,
                       style: TextStyle(
                         fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
                     ),

@@ -178,7 +178,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     "找回密码",
                     style: TextStyle(
                       fontSize: 28.sp,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
                   ),
@@ -507,7 +507,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           style: TextStyle(
             color: Colors.white,
             fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),

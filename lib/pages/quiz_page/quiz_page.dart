@@ -146,7 +146,7 @@ class _QuizPageState extends State<QuizPage> {
         "垃圾分类测验",
         style: TextStyle(
           fontSize: 24.sp,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w600,
           color: Colors.black,
         ),
       ),
@@ -239,7 +239,7 @@ class _QuizPageState extends State<QuizPage> {
                       "${currIdx + 1}/$quizLength",
                       style: TextStyle(
                         fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                         color: Colors.black,
                       ),
                     );
@@ -312,7 +312,7 @@ class _QuizPageState extends State<QuizPage> {
             style: TextStyle(
               fontSize: 14.sp,
               color: const Color(0xFF00CE68),
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
             ),
           );
         },
@@ -330,7 +330,7 @@ class _QuizPageState extends State<QuizPage> {
             currQuiz?.question ?? "",
             style: TextStyle(
               fontSize: 20.sp,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
               color: Colors.black,
             ),
           ),
@@ -427,7 +427,7 @@ class _QuizPageState extends State<QuizPage> {
                                     ? Colors.white
                                     : Colors.black54)
                                 : Colors.black54,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -438,7 +438,7 @@ class _QuizPageState extends State<QuizPage> {
                         style: TextStyle(
                           fontSize: 16.sp,
                           fontWeight: showResult && (isCorrect || isSelected)
-                              ? FontWeight.bold
+                              ? FontWeight.w600
                               : FontWeight.normal,
                         ),
                       ),

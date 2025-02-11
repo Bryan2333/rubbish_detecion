@@ -67,7 +67,7 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
             _typeName,
             style: TextStyle(
               fontSize: 24.sp,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
               color: Colors.white,
             ),
           ),
@@ -159,7 +159,7 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 26.sp,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 SizedBox(height: 12.h),
@@ -215,7 +215,7 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
                   title,
                   style: TextStyle(
                     fontSize: 20.sp,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                     color: Colors.black,
                   ),
                 ),

@@ -66,7 +66,7 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
             "发现",
             style: TextStyle(
               fontSize: 24.sp,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
               color: Colors.black,
             ),
           ),
@@ -107,7 +107,7 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
             "热门活动",
             style: TextStyle(
               fontSize: 20.sp,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
               color: Colors.black,
             ),
           ),
@@ -179,7 +179,7 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
             "今日热点",
             style: TextStyle(
               fontSize: 20.sp,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
               color: Colors.black,
             ),
           ),

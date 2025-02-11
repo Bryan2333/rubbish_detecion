@@ -105,7 +105,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   "创建账号",
                   style: TextStyle(
                     fontSize: 28.sp,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 SizedBox(height: 8.h),
@@ -592,7 +592,7 @@ class _RegisterPageState extends State<RegisterPage> {
           style: TextStyle(
             fontSize: 18.sp,
             color: Colors.white,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -627,7 +627,7 @@ class _RegisterPageState extends State<RegisterPage> {
             style: TextStyle(
               fontSize: 14.sp,
               color: const Color(0xFF04C264),
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),

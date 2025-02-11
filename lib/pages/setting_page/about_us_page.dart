@@ -17,7 +17,7 @@ class AboutUsPage extends StatelessWidget {
         centerTitle: true,
         title: Text(
           "关于我们",
-          style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.w600),
         ),
       ),
       backgroundColor: Colors.white,
@@ -95,7 +95,7 @@ class AboutUsPage extends StatelessWidget {
       "智能垃圾分类与回收服务APP",
       style: TextStyle(
         fontSize: 24.sp,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w600,
         color: const Color(0xFF04C264),
       ),
     );
@@ -146,7 +146,7 @@ class AboutUsPage extends StatelessWidget {
                   title,
                   style: TextStyle(
                     fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                     color: const Color(0xFF04C264),
                   ),
                 ),
@@ -180,7 +180,7 @@ class AboutUsPage extends StatelessWidget {
                   title,
                   style: TextStyle(
                     fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                     color: const Color(0xFF04C264),
                   ),
                 ),
@@ -234,7 +234,7 @@ class AboutUsPage extends StatelessWidget {
           "我们的愿景",
           style: TextStyle(
             fontSize: 18.sp,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
             color: const Color(0xFF04C264),
           ),
         ),

@@ -72,7 +72,7 @@ class _RecordPageState extends State<RecordPage>
         title: Text(
           "语音识别",
           style: TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
             fontSize: 24.sp,
             color: Colors.black,
           ),

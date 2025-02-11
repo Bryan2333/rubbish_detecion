@@ -171,7 +171,7 @@ class _CustomAddressPickerState extends State<CustomAddressPicker> {
         ),
         Text(
           "选择地址",
-          style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600),
         ),
         TextButton(
           onPressed: _handleConfirm,
@@ -271,7 +271,7 @@ class _CustomAddressPickerState extends State<CustomAddressPicker> {
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: index == selectedIndex
-                      ? FontWeight.bold
+                      ? FontWeight.w600
                       : FontWeight.normal,
                   color: index == selectedIndex ? Colors.blue : Colors.black,
                 ),

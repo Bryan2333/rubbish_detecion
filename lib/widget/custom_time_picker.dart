@@ -141,7 +141,7 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
         ),
         Text(
           "请选择时间",
-          style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600),
         ),
         TextButton(
           onPressed: () {
@@ -215,7 +215,7 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: index == selectedIndex
-                    ? FontWeight.bold
+                    ? FontWeight.w600
                     : FontWeight.normal,
                 color: index == selectedIndex ? Colors.blue : Colors.black,
               ),
