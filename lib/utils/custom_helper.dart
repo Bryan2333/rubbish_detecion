@@ -4,9 +4,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 class CustomHelper {
   static void showSnackBar(
     BuildContext context,
-    message, {
+    String message, {
     bool defaultStyle = false,
     bool success = true,
+    Duration duration = const Duration(seconds: 3),
   }) {
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
@@ -20,7 +21,7 @@ class CustomHelper {
           message,
           style: TextStyle(fontSize: 16.sp, color: Colors.white),
         ),
-        duration: const Duration(seconds: 3),
+        duration: duration,
       ),
     );
   }

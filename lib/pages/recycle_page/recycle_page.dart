@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
-import 'package:rubbish_detection/pages/recycle_page/address_card.dart';
+import 'package:pull_to_refresh_flutter3/pull_to_refresh_flutter3.dart';
+import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/recycle_page/order_form_page.dart';
+import 'package:rubbish_detection/pages/recycle_page/order_list_page.dart';
+import 'package:rubbish_detection/pages/recycle_page/order_status_page.dart';
 import 'package:rubbish_detection/pages/recycle_page/recycle_vm.dart';
-import 'package:rubbish_detection/pages/recycle_page/waste_bag_card.dart';
+import 'package:rubbish_detection/repository/data/order_bean.dart';
 
 class RecyclingPage extends StatefulWidget {
   const RecyclingPage({super.key});
@@ -14,55 +17,83 @@ class RecyclingPage extends StatefulWidget {
 }
 
 class _RecyclingPageState extends State<RecyclingPage> {
-  final _recycleViewModel = RecycleViewModel();
+  late RefreshController _refreshController;
 
   @override
   void initState() {
     super.initState();
-    _loadOrders();
+    _refreshController = RefreshController();
+    _initRecentOrders();
   }
 
-  Future<void> _loadOrders() async {
-    await _recycleViewModel.getRecentOrders();
+  Future<void> _initRecentOrders({bool forceRefresh = false}) async {
+    final userId =
+        await Provider.of<AuthViewModel>(context, listen: false).getUserId();
+
+    if (!mounted) return;
+    Provider.of<RecycleViewModel>(context, listen: false)
+        .getRecentOrders(userId, forceRefresh: forceRefresh);
   }
+
+  final _wasteTypeMap = {
+    0: "干垃圾",
+    1: "湿垃圾",
+    2: "可回收物",
+    3: "有害垃圾",
+  };
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => _recycleViewModel,
-      child: Scaffold(
-        appBar: _buildAppBar(),
-        body: SafeArea(
-          child: Container(
-            padding: EdgeInsets.all(16.r),
-            child: Consumer<RecycleViewModel>(
-              builder: (context, vm, child) {
-                if (vm.isLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF00CE68),
-                    ),
-                  );
-                } else if (vm.isLoading == false && vm.orders.isEmpty) {
-                  return _buildLoadFailed();
-                } else {
-                  final processingOrders = vm.orders
-                      .where((order) =>
-                          order.orderStatus == 0 || order.orderStatus == 1)
-                      .toList();
-                  final completedOrders = vm.orders
-                      .where((order) => order.orderStatus == 2)
-                      .toList();
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: SafeArea(
+        child: Consumer<RecycleViewModel>(
+          builder: (context, vm, child) {
+            if (vm.isLoading) {
+              return const Center(
+                child: CircularProgressIndicator(color: Color(0xFF00CE68)),
+              );
+            } else {
+              final pendingOrders = vm.currentOrders
+                  .where((order) => order.orderStatus == 0)
+                  .toList();
+              final processingOrders = vm.currentOrders
+                  .where((order) => order.orderStatus == 1)
+                  .toList();
+              final completedOrders = vm.currentOrders
+                  .where((order) => order.orderStatus == 2)
+                  .toList();
 
-                  return SingleChildScrollView(
+              return SmartRefresher(
+                controller: _refreshController,
+                enablePullDown: true,
+                onRefresh: () async {
+                  await _initRecentOrders(forceRefresh: true);
+                  _refreshController.refreshCompleted();
+                },
+                header: const WaterDropMaterialHeader(
+                  backgroundColor: Colors.white,
+                  color: Color(0xFF00CE68),
+                ),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16.r),
+                  child: SingleChildScrollView(
                     child: Column(
                       children: [
                         // 服务中订单卡片
                         _buildGroupCard(
+                          title: "待处理订单",
+                          icon: Icons.pending_actions_outlined,
+                          orders: pendingOrders,
+                          orderStatus: 0,
+                        ),
+                        SizedBox(height: 24.h),
+                        // 服务中订单卡片
+                        _buildGroupCard(
                           title: "服务中订单",
-                          icon: Icons.pending_actions,
+                          icon: Icons.recycling_outlined,
                           orders: processingOrders,
-                          onTap: () {},
+                          orderStatus: 1,
                         ),
                         SizedBox(height: 24.h),
                         // 已完成订单卡片
@@ -70,23 +101,23 @@ class _RecyclingPageState extends State<RecyclingPage> {
                           title: "已完成订单",
                           icon: Icons.check_circle_outline,
                           orders: completedOrders,
-                          onTap: () {},
+                          orderStatus: 2,
                         ),
                         SizedBox(height: 24.h),
                         // 所有订单卡片
                         _buildGroupCard(
                           title: "全部订单",
                           icon: Icons.list_alt,
-                          orders: vm.orders,
-                          onTap: () {},
+                          orders: vm.currentOrders,
                         ),
+                        SizedBox(height: 10.h),
                       ],
                     ),
-                  );
-                }
-              },
-            ),
-          ),
+                  ),
+                ),
+              );
+            }
+          },
         ),
       ),
     );
@@ -96,16 +127,16 @@ class _RecyclingPageState extends State<RecyclingPage> {
     return AppBar(
       title: Text(
         "垃圾上门回收",
-        style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold),
+        style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.w600),
       ),
       centerTitle: true,
       leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios, size: 20.r),
+        icon: const Icon(Icons.arrow_back_ios),
         onPressed: () => Navigator.pop(context),
       ),
       actions: [
         IconButton(
-          icon: Icon(Icons.add_outlined, size: 24.r),
+          icon: Icon(Icons.add_outlined, size: 30.r),
           onPressed: () {
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const OrderFormPage()));
@@ -115,57 +146,12 @@ class _RecyclingPageState extends State<RecyclingPage> {
     );
   }
 
-  // 加载失败提示
-  Widget _buildLoadFailed() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            color: Colors.red,
-            size: 60.r,
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            "加载订单数据失败，请检查您的网络连接。",
-            style: TextStyle(
-              fontSize: 18.sp,
-              color: Colors.black,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 24.h),
-          ElevatedButton(
-            onPressed: () async {
-              await _loadOrders();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00CE68),
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-            ),
-            child: Text(
-              "重试",
-              style: TextStyle(fontSize: 16.sp, color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // 订单卡片
-  Widget _buildGroupCard({
-    required String title,
-    required IconData icon,
-    required List<Order> orders,
-    required VoidCallback onTap,
-  }) {
-    final bool isProcessingOrders = title == "服务中订单";
-
+  Widget _buildGroupCard(
+      {required String title,
+      required IconData icon,
+      required List<OrderBean> orders,
+      int? orderStatus}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -182,7 +168,17 @@ class _RecyclingPageState extends State<RecyclingPage> {
         children: [
           // 标题栏
           GestureDetector(
-            onTap: onTap,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => OrderListPage(
+                    title: title,
+                    orderStatus: orderStatus,
+                  ),
+                ),
+              ).then((_) => _initRecentOrders());
+            },
             child: Container(
               padding: EdgeInsets.all(16.r),
               child: Row(
@@ -200,7 +196,7 @@ class _RecyclingPageState extends State<RecyclingPage> {
                   const Spacer(),
                   Icon(
                     Icons.arrow_forward_ios,
-                    size: 16.r,
+                    size: 20.r,
                     color: Colors.grey[400],
                   ),
                 ],
@@ -209,7 +205,7 @@ class _RecyclingPageState extends State<RecyclingPage> {
           ),
           // 分隔线
           Divider(height: 1.h, color: Colors.grey[100]),
-          if (!isProcessingOrders) _buildPreviewHeader(),
+          _buildPreviewHeader(),
           if (orders.isEmpty)
             _buildEmptyState()
           else
@@ -276,61 +272,68 @@ class _RecyclingPageState extends State<RecyclingPage> {
   }
 
   // 订单预览项
-  Widget _buildOrderPreviewItem(Order order, {bool showBorder = true}) {
-    return Container(
-      padding: EdgeInsets.all(16.r),
-      decoration: BoxDecoration(
-        border: showBorder
-            ? Border(
-                bottom: BorderSide(color: Colors.grey[200]!, width: 1.h),
-              )
-            : null,
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              // 左侧订单信息
-              Text(
-                order.orderDate.replaceAll("-", "/"),
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: Colors.grey[600],
+  Widget _buildOrderPreviewItem(OrderBean order, {bool showBorder = true}) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OrderStatusPage(order: order),
+          ),
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.all(16.r),
+        decoration: BoxDecoration(
+          border: showBorder
+              ? Border(
+                  bottom: BorderSide(color: Colors.grey[200]!, width: 1.h),
+                )
+              : null,
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                // 左侧订单信息
+                Text(
+                  order.orderDate ?? "",
+                  style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
                 ),
-                overflow: TextOverflow.ellipsis,
-              ),
-              const Spacer(),
-              // 右侧状态
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                decoration: BoxDecoration(
-                  color: _getOrderStatusBgColor(order.orderStatus),
-                  borderRadius: BorderRadius.circular(4.r),
-                ),
-                child: Text(
-                  _getOrderStatusText(order.orderStatus),
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: _getOrderStatusColor(order.orderStatus),
+                const Spacer(),
+                // 右侧状态
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: _getOrderStatusBgColor(order.orderStatus ?? -1),
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
+                  child: Text(
+                    _getOrderStatusText(order.orderStatus ?? -1),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: _getOrderStatusColor(order.orderStatus ?? -1),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-          // 废弃物信息
-          _buildInfoRow(
-            Icons.delete_outline,
-            "${order.waste.type} - ${order.waste.name}",
-            weight: "${order.waste.weight}${order.waste.unit}",
-          ),
-          SizedBox(height: 8.h),
-          // 地址信息
-          _buildInfoRow(
-            Icons.location_on_outlined,
-            order.address.detail,
-          ),
-        ],
+              ],
+            ),
+            SizedBox(height: 12.h),
+            // 废弃物信息
+            _buildInfoRow(
+              Icons.delete_outline,
+              "${_wasteTypeMap[order.waste?.type]} - ${order.waste?.name}",
+              weight:
+                  "${order.waste?.weight} ${order.waste?.unit == 1 ? "千克" : "克"}",
+            ),
+            SizedBox(height: 8.h),
+            // 地址信息
+            _buildInfoRow(
+              Icons.location_on_outlined,
+              order.address?.detail ?? "",
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -393,43 +396,6 @@ class _RecyclingPageState extends State<RecyclingPage> {
       1 => const Color(0xFF00CE68),
       2 => Colors.blue,
       _ => Colors.grey,
-    };
-  }
-}
-
-class Order {
-  final int id;
-  final Address address;
-  final Waste waste;
-  final String orderDate;
-  final int orderStatus; // 0 - 未完成，1 - 处理中, 2 - 已完成, 3 - 已取消
-
-  Order(
-      {required this.id,
-      required this.address,
-      required this.waste,
-      required this.orderDate,
-      required this.orderStatus});
-
-  // 从JSON创建Order实例
-  factory Order.fromJson(Map<String, dynamic> json) {
-    return Order(
-      id: json['id'] ?? 0,
-      address: Address.fromJson(json['address']),
-      waste: Waste.fromJson(json['waste']),
-      orderDate: json['orderDate'] ?? '',
-      orderStatus: json['orderStatus'] ?? 0,
-    );
-  }
-
-  // 将Order实例转换为JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'address': address.toJson(),
-      'waste': waste.toJson(),
-      'orderDate': orderDate,
-      'orderStatus': orderStatus,
     };
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:provider/provider.dart';
 import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
+import 'package:rubbish_detection/pages/recycle_page/recycle_vm.dart';
 import 'package:rubbish_detection/route.dart';
 
 /// 设计尺寸
@@ -31,6 +32,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
+        ChangeNotifierProvider(create: (_) => RecycleViewModel()),
       ],
       child: OKToast(
         //屏幕适配父组件组件

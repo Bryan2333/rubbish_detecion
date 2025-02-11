@@ -1,51 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:multi_value_listenable_builder/multi_value_listenable_builder.dart';
+import 'package:rubbish_detection/repository/data/order_address_bean.dart';
 import 'package:rubbish_detection/widget/custom_address_picker.dart';
 import 'package:rubbish_detection/widget/custom_time_picker.dart';
-
-class Address {
-  String? name;
-  String? phoneNum;
-  String? province;
-  String? city;
-  String? area;
-  String? detail;
-  String? pickupTime;
-
-  Address({
-    this.name,
-    this.phoneNum,
-    this.province,
-    this.city,
-    this.area,
-    this.detail,
-    this.pickupTime,
-  });
-
-  factory Address.fromJson(Map<String, dynamic> json) {
-    return Address(
-      name: json["name"] ?? "",
-      phoneNum: json["phoneNum"] ?? "",
-      province: json["province"] ?? "",
-      city: json["city"] ?? "",
-      area: json["area"] ?? "",
-      detail: json["detail"] ?? "",
-      pickupTime: json["pickupTime"] ?? "",
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      "name": name,
-      "phoneNum": phoneNum,
-      "province": province,
-      "city": city,
-      "area": area,
-      "detail": detail,
-      "pickupTime": pickupTime,
-    };
-  }
-}
 
 class AddressCard extends StatefulWidget {
   const AddressCard({
@@ -56,7 +14,7 @@ class AddressCard extends StatefulWidget {
   });
 
   final GlobalKey<FormState>? formKey;
-  final Address? address;
+  final OrderAddressBean? address;
   final bool isReadOnly;
 
   @override
@@ -67,33 +25,42 @@ class _AddressCardState extends State<AddressCard>
     with SingleTickerProviderStateMixin {
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
+  late ValueNotifier<String> _provinceNotifier;
+  late ValueNotifier<String> _cityNotifier;
+  late ValueNotifier<String> _areaNotifier;
   late TextEditingController _detailController;
-
-  late String _selectedPickupTime;
-  late String _selectedProvince;
-  late String _selectedCity;
-  late String _selectedArea;
+  late ValueNotifier<String> _pickupTimeNotifier;
 
   @override
   void initState() {
     super.initState();
-    _selectedPickupTime = widget.address?.pickupTime ?? "请选择上门时间";
-    _selectedProvince = widget.address?.province ?? "";
-    _selectedCity = widget.address?.city ?? "";
-    _selectedArea = widget.address?.area ?? "";
     _nameController = TextEditingController(text: widget.address?.name)
-      ..addListener(() => widget.address?.name = _nameController.text);
+      ..addListener(() => widget.address?.name = _nameController.text.trim());
     _phoneController = TextEditingController(text: widget.address?.phoneNum)
       ..addListener(() => widget.address?.phoneNum = _phoneController.text);
+    _provinceNotifier = ValueNotifier(widget.address?.province ?? "")
+      ..addListener(() => widget.address?.province = _provinceNotifier.value);
+    _cityNotifier = ValueNotifier(widget.address?.city ?? "")
+      ..addListener(() => widget.address?.city = _cityNotifier.value);
+    _areaNotifier = ValueNotifier(widget.address?.area ?? "")
+      ..addListener(() => widget.address?.area = _areaNotifier.value);
     _detailController = TextEditingController(text: widget.address?.detail)
-      ..addListener(() => widget.address?.detail = _detailController.text);
+      ..addListener(
+          () => widget.address?.detail = _detailController.text.trim());
+    _pickupTimeNotifier = ValueNotifier(widget.address?.pickupTime ?? "请选择上门时间")
+      ..addListener(
+          () => widget.address?.pickupTime = _pickupTimeNotifier.value);
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _provinceNotifier.dispose();
+    _cityNotifier.dispose();
+    _areaNotifier.dispose();
     _detailController.dispose();
+    _pickupTimeNotifier.dispose();
     super.dispose();
   }
 
@@ -125,16 +92,16 @@ class _AddressCardState extends State<AddressCard>
   }
 
   String? _validateRegion(_) {
-    if (_selectedProvince.isEmpty ||
-        _selectedCity.isEmpty ||
-        _selectedArea.isEmpty) {
+    if (_provinceNotifier.value.isEmpty ||
+        _cityNotifier.value.isEmpty ||
+        _areaNotifier.value.isEmpty) {
       return "请选择省市区";
     }
     return null;
   }
 
   String? _validatePickupTime(_) {
-    if (_selectedPickupTime == "请选择上门时间") {
+    if (_pickupTimeNotifier.value == "请选择上门时间") {
       return "请选择上门时间";
     }
     return null;
@@ -165,7 +132,7 @@ class _AddressCardState extends State<AddressCard>
       child: Row(
         children: [
           Icon(
-            Icons.location_on,
+            Icons.location_on_outlined,
             color: const Color(0xFF00CE68),
             size: 24.r,
           ),
@@ -210,14 +177,21 @@ class _AddressCardState extends State<AddressCard>
                   _buildFormField(
                     icon: Icons.person_outline,
                     label: "姓名",
-                    child: _buildNameField(),
+                    child: _buildTextField(
+                      controller: _nameController,
+                      hintText: "请输入姓名",
+                    ),
                     validator: _validateName,
                   ),
                   _buildDivider(),
                   _buildFormField(
                     icon: Icons.phone_outlined,
                     label: "手机号",
-                    child: _buildPhoneField(),
+                    child: _buildTextField(
+                      controller: _phoneController,
+                      hintText: "请输入手机号",
+                      keyboardType: TextInputType.phone,
+                    ),
                     validator: _validatePhone,
                   ),
                   _buildDivider(),
@@ -231,7 +205,10 @@ class _AddressCardState extends State<AddressCard>
                   _buildFormField(
                     icon: Icons.home_outlined,
                     label: "详细地址",
-                    child: _buildDetailField(),
+                    child: _buildTextField(
+                      controller: _detailController,
+                      hintText: "请输入详细地址",
+                    ),
                     validator: _validateDetail,
                   ),
                   _buildDivider(),
@@ -268,30 +245,23 @@ class _AddressCardState extends State<AddressCard>
                 color: Colors.grey[600],
               ),
               SizedBox(width: 12.w),
-              if (!widget.isReadOnly)
-                RichText(
-                  text: TextSpan(
-                    text: label,
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      color: Colors.grey[600],
-                    ),
-                    children: const [
-                      TextSpan(
-                        text: ' *',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                Text(
-                  label,
+              RichText(
+                text: TextSpan(
+                  text: label,
                   style: TextStyle(
                     fontSize: 16.sp,
                     color: Colors.grey[600],
                   ),
+                  children: widget.isReadOnly
+                      ? null
+                      : const [
+                          TextSpan(
+                            text: ' *',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ],
                 ),
+              )
             ],
           ),
           Expanded(
@@ -332,6 +302,7 @@ class _AddressCardState extends State<AddressCard>
       required String hintText,
       TextInputType? keyboardType}) {
     return TextField(
+      readOnly: widget.isReadOnly,
       textAlign: TextAlign.right,
       controller: controller,
       keyboardType: keyboardType,
@@ -341,154 +312,97 @@ class _AddressCardState extends State<AddressCard>
         isDense: true,
         contentPadding: EdgeInsets.zero,
       ),
+      style: TextStyle(fontSize: 16.sp),
       onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
     );
   }
 
-  Widget _buildNameField() {
-    if (widget.isReadOnly) {
-      return Text(
-        widget.address?.name ?? "",
-        style: TextStyle(fontSize: 16.sp),
-      );
-    } else {
-      return _buildTextField(
-        controller: _nameController,
-        hintText: "请输入姓名",
-      );
-    }
-  }
-
-  Widget _buildPhoneField() {
-    if (widget.isReadOnly) {
-      return Text(
-        widget.address?.phoneNum ?? "",
-        style: TextStyle(fontSize: 16.sp),
-      );
-    } else {
-      return _buildTextField(
-        controller: _phoneController,
-        hintText: "请输入手机号",
-        keyboardType: TextInputType.phone,
-      );
-    }
-  }
-
   Widget _buildProvinceCityAreaField() {
-    return StatefulBuilder(
-      builder: (context, setState) {
-        final String text;
-        if (_selectedProvince.isEmpty ||
-            _selectedCity.isEmpty ||
-            _selectedArea.isEmpty) {
-          text = "请选择省市区";
-        } else {
-          text = "$_selectedProvince $_selectedCity $_selectedArea";
-        }
+    return MultiValueListenableBuilder(
+      valueListenables: [_provinceNotifier, _cityNotifier, _areaNotifier],
+      builder: (context, values, child) {
+        final province = values[0] as String;
+        final city = values[1] as String;
+        final area = values[2] as String;
+        final text = (province.isEmpty || city.isEmpty || area.isEmpty)
+            ? "请选择省市区"
+            : "$province $city $area";
 
-        if (widget.isReadOnly) {
-          return Text(text, style: TextStyle(fontSize: 16.sp));
-        } else {
-          return GestureDetector(
-            onTap: () {
-              _showCustomPicker(
-                picker: CustomAddressPicker(
-                  initialAddress: {
-                    "province": _selectedProvince,
-                    "city": _selectedCity,
-                    "district": _selectedArea
-                  },
-                  onAddressSelected: (value) {
-                    setState(() {
-                      _selectedProvince = value["province"]!;
-                      _selectedCity = value["city"]!;
-                      _selectedArea = value["district"]!;
-
-                      widget.address?.province = _selectedProvince;
-                      widget.address?.city = _selectedCity;
-                      widget.address?.area = _selectedArea;
-                    });
-                  },
-                ),
-              );
-            },
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    text,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: text == "请选择省市区" ? Colors.grey : Colors.black,
-                    ),
-                    textAlign: TextAlign.right,
-                    softWrap: true,
+        return GestureDetector(
+          onTap: () {
+            if (widget.isReadOnly) return;
+            _showCustomPicker(
+              picker: CustomAddressPicker(
+                initialAddress: {
+                  "province": province,
+                  "city": city,
+                  "district": area
+                },
+                onAddressSelected: (value) {
+                  _provinceNotifier.value = value["province"]!;
+                  _cityNotifier.value = value["city"]!;
+                  _areaNotifier.value = value["district"]!;
+                },
+              ),
+            );
+          },
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    color: text == "请选择省市区" ? Colors.grey : Colors.black,
                   ),
+                  textAlign: TextAlign.right,
+                  softWrap: true,
                 ),
+              ),
+              if (!widget.isReadOnly)
                 Icon(Icons.keyboard_arrow_down, size: 20.r),
-              ],
-            ),
-          );
-        }
+            ],
+          ),
+        );
       },
     );
   }
 
-  Widget _buildDetailField() {
-    if (widget.isReadOnly) {
-      return Text(
-        widget.address?.detail ?? "",
-        style: TextStyle(fontSize: 16.sp),
-      );
-    } else {
-      return _buildTextField(
-        controller: _detailController,
-        hintText: "请输入详细地址",
-      );
-    }
-  }
-
   Widget _buildPickupTimeField() {
-    if (widget.isReadOnly) {
-      return Text(_selectedPickupTime, style: TextStyle(fontSize: 16.sp));
-    } else {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return GestureDetector(
-            onTap: () {
-              _showCustomPicker(
-                picker: CustomTimePicker(
-                  initialDateTime: _selectedPickupTime,
-                  onTimeSelected: (value) {
-                    setState(() {
-                      _selectedPickupTime = value;
-                      widget.address?.pickupTime = _selectedPickupTime;
-                    });
-                  },
-                ),
-              );
-            },
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _selectedPickupTime,
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      color: _selectedPickupTime == "请选择上门时间"
-                          ? Colors.grey
-                          : Colors.black,
-                    ),
-                    textAlign: TextAlign.right,
+    return ValueListenableBuilder(
+      valueListenable: _pickupTimeNotifier,
+      builder: (context, pickupTime, child) {
+        return GestureDetector(
+          onTap: () {
+            if (widget.isReadOnly) return;
+            _showCustomPicker(
+              picker: CustomTimePicker(
+                initialDateTime: pickupTime,
+                onTimeSelected: (value) {
+                  _pickupTimeNotifier.value = value;
+                },
+              ),
+            );
+          },
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  pickupTime,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    color: pickupTime == "请选择上门时间" ? Colors.grey : Colors.black,
                   ),
+                  textAlign: TextAlign.right,
                 ),
+              ),
+              if (!widget.isReadOnly)
                 Icon(Icons.keyboard_arrow_down, size: 20.r),
-              ],
-            ),
-          );
-        },
-      );
-    }
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildDivider() {

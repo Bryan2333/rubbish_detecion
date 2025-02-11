@@ -1,5 +1,6 @@
 import 'package:rubbish_detection/http/dio_instance.dart';
 import 'package:rubbish_detection/repository/data/banner_bean.dart';
+import 'package:rubbish_detection/repository/data/order_bean.dart';
 import 'package:rubbish_detection/repository/data/quiz_bean.dart';
 import 'package:rubbish_detection/repository/data/recognition_collection_bean.dart';
 import 'package:rubbish_detection/repository/data/rubbish_type_desc_bean.dart';
@@ -314,5 +315,90 @@ class Api {
     );
 
     return response.statusCode;
+  }
+
+  Future<(OrderBean?, String?)> addOrder(OrderBean order) async {
+    final response = await DioInstance.instance.post(
+      "/api/order/add",
+      data: order.toJson(),
+    );
+
+    if (response.statusCode == 1000) {
+      final order = OrderBean.fromJson(response.data);
+      return (order, null);
+    }
+
+    return (null, response.statusMessage);
+  }
+
+  Future<List<OrderBean>?> getRecentOrder(int userId) async {
+    final response = await DioInstance.instance.get(
+      "/api/order/getRecent?userId=$userId",
+    );
+
+    if (response.data is! List) {
+      return null;
+    }
+
+    final orderJsonList = response.data as List;
+    final orders = orderJsonList
+        .map((json) => OrderBean.fromJson(json as Map<String, dynamic>))
+        .toList();
+
+    return orders;
+  }
+
+  Future<List<OrderBean>?> getOrderByPage(
+    int userId, {
+    int pageNum = 1,
+    int pageSize = 10,
+  }) async {
+    final response = await DioInstance.instance.get(
+      "/api/order/findByPage",
+      params: {
+        "userId": userId,
+        "pageNum": pageNum,
+        "pageSize": pageSize,
+      },
+    );
+
+    if (response.data is! List) {
+      return null;
+    }
+
+    final orderJsonList = response.data as List;
+    final orders = orderJsonList
+        .map((json) => OrderBean.fromJson(json as Map<String, dynamic>))
+        .toList();
+
+    return orders;
+  }
+
+  Future<List<OrderBean>?> getOrderByStatusWithPage(
+    int userId,
+    int orderStatus, {
+    int pageNum = 1,
+    int pageSize = 10,
+  }) async {
+    final response = await DioInstance.instance.get(
+      "/api/order/findByStatus",
+      params: {
+        "userId": userId,
+        "orderStatus": orderStatus,
+        "pageNum": pageNum,
+        "pageSize": pageSize,
+      },
+    );
+
+    if (response.data is! List) {
+      return null;
+    }
+
+    final orderJsonList = response.data as List;
+    final orders = orderJsonList
+        .map((json) => OrderBean.fromJson(json as Map<String, dynamic>))
+        .toList();
+
+    return orders;
   }
 }

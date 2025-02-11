@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:pull_to_refresh_flutter3/pull_to_refresh_flutter3.dart';
+import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/recycle_page/order_status_page.dart';
-import 'package:rubbish_detection/pages/recycle_page/recycle_page.dart';
 import 'package:rubbish_detection/pages/recycle_page/recycle_vm.dart';
+import 'package:rubbish_detection/repository/data/order_bean.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 
 class OrderListPage extends StatefulWidget {
   const OrderListPage({super.key, required this.title, this.orderStatus});
@@ -16,16 +19,24 @@ class OrderListPage extends StatefulWidget {
 }
 
 class _OrderListPageState extends State<OrderListPage> {
-  final _recycleViewModel = RecycleViewModel();
+  late RefreshController _refreshController;
 
   @override
   void initState() {
     super.initState();
-    _loadOrders();
+    _refreshController = RefreshController();
+    _loadOrRefresh();
   }
 
-  Future<void> _loadOrders() async {
-    await _recycleViewModel.getOrdersByStatus(widget.orderStatus);
+  Future<void> _loadOrRefresh(
+      {bool forceRefresh = false, bool loadMore = false}) async {
+    final userId =
+        await Provider.of<AuthViewModel>(context, listen: false).getUserId();
+
+    if (!mounted) return;
+    Provider.of<RecycleViewModel>(context, listen: false).getOrdersByStatus(
+        userId, widget.orderStatus,
+        forceRefresh: forceRefresh, loadMore: loadMore);
   }
 
   String _getStatusText(int? status) {
@@ -58,37 +69,41 @@ class _OrderListPageState extends State<OrderListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => _recycleViewModel,
-      child: Scaffold(
-        appBar: _buildAppBar(),
-        body: Consumer<RecycleViewModel>(
-          builder: (context, vm, child) {
-            if (vm.isLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: Color(0xFF00CE68)),
-              );
-            } else if (vm.orders.isEmpty && !vm.isLoading) {
-              return _buildEmptyState();
-            } else {
-              return SafeArea(
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  child: SingleChildScrollView(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: vm.orders.length,
-                      itemBuilder: (context, index) {
-                        return _buildOrderCard(vm.orders[index]);
-                      },
-                    ),
-                  ),
-                ),
-              );
-            }
-          },
-        ),
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: Consumer<RecycleViewModel>(
+        builder: (context, vm, child) {
+          return SafeArea(
+            child: SmartRefresher(
+              controller: _refreshController,
+              enablePullDown: true,
+              enablePullUp: true,
+              onRefresh: () async {
+                await _loadOrRefresh(forceRefresh: true);
+                _refreshController.refreshCompleted();
+              },
+              onLoading: () async {
+                if (!vm.hasMore(widget.orderStatus)) {
+                  CustomHelper.showSnackBar(context, "没有更多数据了");
+                } else {
+                  await _loadOrRefresh(loadMore: true);
+                }
+                _refreshController.loadComplete();
+              },
+              header: const WaterDropMaterialHeader(
+                backgroundColor: Colors.white,
+                color: Color(0xFF00CE68),
+              ),
+              child: (vm.isLoading && !vm.hasMore(widget.orderStatus))
+                  ? const Center(
+                      child:
+                          CircularProgressIndicator(color: Color(0xFF00CE68)))
+                  : vm.currentOrders.isEmpty
+                      ? _buildEmptyState()
+                      : _buildOrderList(vm.currentOrders),
+            ),
+          );
+        },
       ),
     );
   }
@@ -98,7 +113,10 @@ class _OrderListPageState extends State<OrderListPage> {
       centerTitle: true,
       title: Text(
         widget.title,
-        style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          fontSize: 24.sp,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       leading: IconButton(
         onPressed: () => Navigator.pop(context),
@@ -107,25 +125,47 @@ class _OrderListPageState extends State<OrderListPage> {
     );
   }
 
-  /// 构建当订单列表为空时的显示内容
   Widget _buildEmptyState() {
     return Container(
       alignment: Alignment.center,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox_outlined, size: 64.r, color: Colors.grey[400]),
+          Icon(
+            Icons.inbox_outlined,
+            size: 64.r,
+            color: Colors.grey[400],
+          ),
           SizedBox(height: 16.h),
           Text(
             "暂时没有相关订单",
-            style: TextStyle(fontSize: 16.sp, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: 16.sp,
+              color: Colors.grey[600],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildOrderCard(Order order) {
+  Widget _buildOrderList(List<OrderBean> orders) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: SingleChildScrollView(
+        child: ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: orders.length,
+          itemBuilder: (context, index) {
+            return _buildOrderCard(orders[index]);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrderCard(OrderBean order) {
     final statusText = _getStatusText(order.orderStatus);
     final statusColor = _getStatusColor(order.orderStatus);
 
@@ -146,7 +186,6 @@ class _OrderListPageState extends State<OrderListPage> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-            // TODO: 处理订单点击事件，例如导航到订单详情页
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -170,7 +209,7 @@ class _OrderListPageState extends State<OrderListPage> {
                     SizedBox(width: 12.w),
                     Expanded(
                       child: Text(
-                        order.waste.name ?? "未知垃圾",
+                        order.waste?.name ?? "未知垃圾",
                         style: TextStyle(
                           fontSize: 18.sp,
                           fontWeight: FontWeight.w600,
@@ -204,14 +243,15 @@ class _OrderListPageState extends State<OrderListPage> {
                 // 重量
                 _buildInfoRow(
                   icon: Icons.monitor_weight_outlined,
-                  value: "${order.waste.weight} ${order.waste.unit}",
+                  value:
+                      "${order.waste?.weight} ${order.waste?.unit == 1 ? "千克" : "克"}",
                 ),
                 SizedBox(height: 8.h),
                 // 订单地址
                 _buildInfoRow(
                   icon: Icons.location_on_outlined,
                   value:
-                      "${order.address.province} ${order.address.city} ${order.address.area} ${order.address.detail}",
+                      "${order.address?.province}${order.address?.city}${order.address?.area}${order.address?.detail}",
                 ),
               ],
             ),
@@ -224,11 +264,18 @@ class _OrderListPageState extends State<OrderListPage> {
   Widget _buildInfoRow({required IconData icon, required String value}) {
     return Row(
       children: [
-        Icon(icon, color: Colors.grey[600], size: 16.r),
+        Icon(
+          icon,
+          color: Colors.grey[600],
+          size: 16.r,
+        ),
         SizedBox(width: 8.w),
         Text(
           value,
-          style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+          style: TextStyle(
+            fontSize: 14.sp,
+            color: Colors.grey[600],
+          ),
         ),
       ],
     );

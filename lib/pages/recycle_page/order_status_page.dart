@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rubbish_detection/pages/recycle_page/address_card.dart';
-import 'package:rubbish_detection/pages/recycle_page/recycle_page.dart';
 import 'package:rubbish_detection/pages/recycle_page/waste_card.dart';
+import 'package:rubbish_detection/repository/data/order_bean.dart';
 
 class OrderStatusPage extends StatefulWidget {
   const OrderStatusPage({
@@ -10,7 +10,7 @@ class OrderStatusPage extends StatefulWidget {
     required this.order,
   });
 
-  final Order order;
+  final OrderBean order;
 
   @override
   State<OrderStatusPage> createState() => _OrderStatusPageState();
@@ -108,7 +108,7 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
             "订单信息",
             style: TextStyle(
               fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
               color: const Color(0xFF00CE68),
             ),
           ),
@@ -166,7 +166,7 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
           _buildDivider(),
           _buildInfoRow(
               label: "实际金额",
-              value: (widget.order.actualPrice == null)
+              value: widget.order.actualPrice == null
                   ? "未知"
                   : "${widget.order.actualPrice?.toStringAsFixed(2)} 元"),
         ],

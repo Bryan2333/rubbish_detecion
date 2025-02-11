@@ -1,68 +1,24 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:rubbish_detection/repository/data/order_waste_bean.dart';
 import 'package:rubbish_detection/utils/image_helper.dart';
 
-class Waste {
-  int? id;
-  String? type;
-  String? name;
-  String? weight;
-  String? unit;
-  String? description;
-  List<String> photos = [];
-
-  Waste({
-    this.id,
-    this.type = "0",
-    this.name,
-    this.weight,
-    this.unit = "kg",
-    this.description,
-    this.photos = const [],
-  });
-
-  // 从JSON创建WasteBag实例
-  factory Waste.fromJson(Map<String, dynamic> json) {
-    return Waste(
-      id: json['id'] ?? 0,
-      type: json['type'],
-      name: json['name'],
-      weight: json['weight'],
-      unit: json['unit'],
-      description: json['description'],
-      photos: List<String>.from(json['photos'] ?? []),
-    );
-  }
-
-  // 将WasteBag实例转换为JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'type': type,
-      'name': name,
-      'weight': weight,
-      'unit': unit,
-      'description': description,
-      'photos': photos,
-    };
-  }
-}
-
 class WasteCard extends StatefulWidget {
-  final Waste waste;
-  final VoidCallback? onCalculateTotal;
-  final Function(int)? removeWasteBag;
+  final OrderWasteBean? waste;
+  final VoidCallback? onCalEstimatedPrice;
   final bool isReadOnly;
   final GlobalKey<FormState>? formKey;
+  final List<String>? localPhotoPaths;
 
   const WasteCard({
     super.key,
     required this.waste,
     this.isReadOnly = false,
-    this.onCalculateTotal,
-    this.removeWasteBag,
+    this.onCalEstimatedPrice,
     this.formKey,
+    this.localPhotoPaths,
   });
 
   @override
@@ -71,37 +27,83 @@ class WasteCard extends StatefulWidget {
 
 class _WasteCardState extends State<WasteCard>
     with SingleTickerProviderStateMixin {
-  late String _selectedType;
-  late String _selectedUnit;
+  late ValueNotifier<int> _typeNotifier;
+  late TextEditingController _nameController;
+  late TextEditingController _weightController;
+  late ValueNotifier<int> _unitNotifier;
+  late TextEditingController _descriptionController;
 
   bool _isDeleting = false;
+
+  final _wasteTypeMap = {
+    0: "干垃圾",
+    1: "湿垃圾",
+    2: "可回收物",
+    3: "有害垃圾",
+  };
 
   @override
   void initState() {
     super.initState();
-    _selectedType = widget.waste.type ?? "0";
-    _selectedUnit = widget.waste.unit ?? "kg";
+    _typeNotifier = ValueNotifier(widget.waste?.type ?? 0)
+      ..addListener(() {
+        widget.waste?.type = _typeNotifier.value;
+        widget.onCalEstimatedPrice?.call();
+      });
+    _nameController = TextEditingController(text: widget.waste?.name)
+      ..addListener(() {
+        widget.waste?.name = _nameController.text.trim();
+      });
+    _weightController = TextEditingController(
+        text:
+            widget.waste?.weight == null ? "" : widget.waste?.weight.toString())
+      ..addListener(() {
+        widget.waste?.weight = double.tryParse(_weightController.text) ?? 0;
+        widget.onCalEstimatedPrice?.call();
+      });
+    _unitNotifier = ValueNotifier(widget.waste?.unit ?? 1)
+      ..addListener(() {
+        widget.waste?.unit = _unitNotifier.value;
+        widget.onCalEstimatedPrice?.call();
+      });
+    _descriptionController =
+        TextEditingController(text: widget.waste?.description)
+          ..addListener(() {
+            widget.waste?.description = _descriptionController.text.trim();
+          });
+  }
+
+  @override
+  void dispose() {
+    _typeNotifier.dispose();
+    _nameController.dispose();
+    _weightController.dispose();
+    _unitNotifier.dispose();
+    _descriptionController.dispose();
+    super.dispose();
   }
 
   String? _validateName(String? value) {
-    if (value == null || value.trim().isEmpty == true) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
       return "请输入废品名称";
     }
     return null;
   }
 
   String? _validateWeight(String? value) {
-    if (value == null || value.trim().isEmpty == true) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
       return "请输入废品重量";
     }
-    if (RegExp(r'[^\d.]').hasMatch(value)) {
+    if (RegExp(r'[^\d.]').hasMatch(trimmed)) {
       return "请输入有效的数字";
     }
     return null;
   }
 
-  String? _validatePhotos(List<String> value) {
-    if (value.isEmpty) {
+  String? _validatePhotos(List<String>? value) {
+    if (value?.isEmpty ?? true) {
       return "请上传至少一张图片";
     }
     return null;
@@ -183,19 +185,21 @@ class _WasteCardState extends State<WasteCard>
                   _buildFormField(
                     icon: Icons.edit_outlined,
                     label: "名称",
-                    child: _buildNameField(),
+                    child: _buildTextField(_nameController, "请输入废品名称"),
+                    validator: (_) => _validateName(_nameController.text),
                   ),
                   _buildDivider(),
                   _buildFormField(
                     icon: Icons.monitor_weight_outlined,
                     label: "重量",
                     child: _buildWeightField(),
+                    validator: (_) => _validateWeight(_weightController.text),
                   ),
                   _buildDivider(),
                   _buildFormField(
                     icon: Icons.description_outlined,
                     label: "描述",
-                    child: _buildDescriptionField(),
+                    child: _buildTextField(_descriptionController, "请输入描述信息"),
                     isRequired: false,
                   ),
                   _buildDivider(),
@@ -203,6 +207,7 @@ class _WasteCardState extends State<WasteCard>
                     icon: Icons.image_outlined,
                     label: "图片",
                     child: _buildPhotos(),
+                    validator: (_) => _validatePhotos(widget.localPhotoPaths),
                     centerAlign: true,
                   ),
                 ],
@@ -214,13 +219,13 @@ class _WasteCardState extends State<WasteCard>
     );
   }
 
-  Widget _buildFormField({
-    required IconData icon,
-    required String label,
-    required Widget child,
-    bool centerAlign = false,
-    bool isRequired = true,
-  }) {
+  Widget _buildFormField(
+      {required IconData icon,
+      required String label,
+      required Widget child,
+      bool centerAlign = false,
+      bool isRequired = true,
+      String? Function(String? value)? validator}) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 16.h),
       child: Row(
@@ -235,30 +240,31 @@ class _WasteCardState extends State<WasteCard>
                 color: Colors.grey[600],
               ),
               SizedBox(width: 12.w),
-              if (isRequired && !widget.isReadOnly)
-                RichText(
-                  text: TextSpan(
-                    text: label,
-                    style: TextStyle(fontSize: 16.sp, color: Colors.grey[600]),
-                    children: const [
-                      TextSpan(
-                        text: ' *',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                Text(
-                  label,
+              RichText(
+                text: TextSpan(
+                  text: label,
                   style: TextStyle(fontSize: 16.sp, color: Colors.grey[600]),
+                  children: widget.isReadOnly
+                      ? null
+                      : (isRequired
+                          ? const [
+                              TextSpan(
+                                text: ' *',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ]
+                          : null),
                 ),
+              )
             ],
           ),
           Expanded(
-            child: Container(
-              alignment: Alignment.centerRight,
-              child: child,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                child,
+                if (isRequired) _buildErrorMessage(validator),
+              ],
             ),
           ),
         ],
@@ -271,257 +277,208 @@ class _WasteCardState extends State<WasteCard>
   }
 
   Widget _buildTypeDropdown() {
-    if (widget.isReadOnly) {
-      return Text(widget.waste.name ?? "", style: TextStyle(fontSize: 16.sp));
-    } else {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              DropdownButton(
-                value: _selectedType,
-                underline: const SizedBox.shrink(),
-                isDense: true,
-                padding: EdgeInsets.zero,
-                items: const [
-                  DropdownMenuItem(value: "0", child: Text("干垃圾")),
-                  DropdownMenuItem(value: "1", child: Text("湿垃圾")),
-                  DropdownMenuItem(value: "2", child: Text("可回收物")),
-                  DropdownMenuItem(value: "3", child: Text("有害垃圾")),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedType = value!;
-                    widget.waste.type = _selectedType;
-                    widget.onCalculateTotal?.call();
-                  });
-                },
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
-
-  Widget _buildNameField() {
-    if (widget.isReadOnly) {
-      return Text(widget.waste.name ?? "", style: TextStyle(fontSize: 16.sp));
-    } else {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          TextField(
-            textAlign: TextAlign.right,
-            decoration: const InputDecoration(
-              hintText: "请输入废品名称",
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: EdgeInsets.zero,
-            ),
-            onChanged: (value) => widget.waste.name = value,
-            onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-          ),
-          _buildErrorMessage((_) => _validateName(widget.waste.name)),
-        ],
-      );
-    }
+    return ValueListenableBuilder(
+      valueListenable: _typeNotifier,
+      builder: (context, type, child) {
+        if (widget.isReadOnly) {
+          return Text(_wasteTypeMap[type] ?? "未知",
+              style: TextStyle(fontSize: 16.sp));
+        }
+        return DropdownButton(
+          value: type,
+          underline: const SizedBox.shrink(),
+          isDense: true,
+          padding: EdgeInsets.zero,
+          items: const [
+            DropdownMenuItem(value: 0, child: Text("干垃圾")),
+            DropdownMenuItem(value: 1, child: Text("湿垃圾")),
+            DropdownMenuItem(value: 2, child: Text("可回收物")),
+            DropdownMenuItem(value: 3, child: Text("有害垃圾")),
+          ],
+          onChanged: (value) {
+            _typeNotifier.value = value!;
+          },
+        );
+      },
+    );
   }
 
   Widget _buildWeightField() {
-    if (widget.isReadOnly) {
-      return Text(
-        "${widget.waste.weight} ${widget.waste.unit}",
-        style: TextStyle(fontSize: 16.sp),
-      );
-    } else {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  textAlign: TextAlign.right,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    hintText: "请输入废品重量",
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  onChanged: (value) {
-                    widget.waste.weight = value;
-                    widget.onCalculateTotal?.call();
-                  },
-                  onTapOutside: (_) {
-                    FocusManager.instance.primaryFocus?.unfocus();
-                  },
-                ),
-              ),
-              SizedBox(width: 8.w),
-              StatefulBuilder(
-                builder: (context, setState) {
-                  return DropdownButton(
-                    value: _selectedUnit,
-                    isDense: true,
-                    padding: EdgeInsets.zero,
-                    underline: const SizedBox.shrink(),
-                    items: const [
-                      DropdownMenuItem(value: "kg", child: Text("千克")),
-                      DropdownMenuItem(value: "g", child: Text("克")),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedUnit = value!;
-                        widget.waste.unit = _selectedUnit;
-                        widget.onCalculateTotal?.call();
-                      });
-                    },
-                  );
-                },
-              ),
-            ],
-          ),
-          _buildErrorMessage((_) => _validateWeight(widget.waste.weight)),
-        ],
-      );
-    }
-  }
-
-  Widget _buildDescriptionField() {
-    if (widget.isReadOnly) {
-      return Text(
-        widget.waste.description ?? "无",
-        style: TextStyle(fontSize: 16.sp),
-      );
-    } else {
-      return TextField(
-        textAlign: TextAlign.right,
-        decoration: const InputDecoration(
-          hintText: "请输入描述信息",
-          border: InputBorder.none,
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
+    return Row(
+      children: [
+        Expanded(child: _buildTextField(_weightController, "请输入废品重量")),
+        SizedBox(width: 8.w),
+        ValueListenableBuilder(
+          valueListenable: _unitNotifier,
+          builder: (context, selectedUnit, child) {
+            if (widget.isReadOnly) {
+              return Text(selectedUnit == 1 ? "千克" : "克",
+                  style: TextStyle(fontSize: 16.sp));
+            }
+            return DropdownButton(
+              value: selectedUnit,
+              isDense: true,
+              padding: EdgeInsets.zero,
+              underline: const SizedBox.shrink(),
+              items: const [
+                DropdownMenuItem(value: 1, child: Text("千克")),
+                DropdownMenuItem(value: 0, child: Text("克")),
+              ],
+              onChanged: (value) => _unitNotifier.value = value!,
+            );
+          },
         ),
-        onChanged: (value) => widget.waste.description = value,
-        onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-      );
-    }
+      ],
+    );
   }
 
   Widget _buildPhotos() {
-    if (widget.waste.photos.isEmpty && widget.isReadOnly) {
+    final photosToDisplay = widget.isReadOnly
+        ? (widget.waste?.photos ?? [])
+        : widget.localPhotoPaths ?? [];
+
+    if (photosToDisplay.isEmpty && widget.isReadOnly) {
       return Text("暂无图片", style: TextStyle(fontSize: 16.sp));
-    } else {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Wrap(
-                children: [
-                  ...widget.waste.photos.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final photo = entry.value;
-                    return Container(
-                      padding: EdgeInsets.symmetric(horizontal: 4.w),
-                      child: GestureDetector(
-                        // 长按图片时显示删除按钮
-                        onLongPress: !widget.isReadOnly
-                            ? () => setState(() => _isDeleting = !_isDeleting)
-                            : null,
-                        child: Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(10.r),
-                              child: Image.file(
-                                File(photo),
-                                width: 60.w,
-                                height: 60.h,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) {
-                                  return Icon(
-                                    Icons.broken_image_outlined,
-                                    color: Colors.grey,
-                                    size: 30.r,
-                                  );
-                                },
+    }
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Wrap(
+          children: [
+            ...photosToDisplay.asMap().entries.map((entry) {
+              final MapEntry(key: index, value: photo) = entry;
+              return Container(
+                padding: EdgeInsets.symmetric(horizontal: 4.w),
+                child: GestureDetector(
+                  // 长按图片时显示删除按钮
+                  onLongPress: !widget.isReadOnly
+                      ? () => setState(() => _isDeleting = !_isDeleting)
+                      : null,
+                  child: Stack(
+                    children: [
+                      _buildImageWidget(photo),
+                      // 删除按钮，只有长按时才显示
+                      if (_isDeleting)
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                photosToDisplay.removeAt(index);
+
+                                if (photosToDisplay.isEmpty) {
+                                  _isDeleting = false;
+                                }
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(4.r),
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.red,
+                              ),
+                              child: Icon(
+                                Icons.delete,
+                                color: Colors.white,
+                                size: 14.r,
                               ),
                             ),
-                            // 删除按钮，只有长按时才显示
-                            if (_isDeleting)
-                              Positioned(
-                                top: 0,
-                                right: 0,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      widget.waste.photos.removeAt(index);
-
-                                      if (widget.waste.photos.isEmpty) {
-                                        _isDeleting = false;
-                                      }
-                                    });
-                                  },
-                                  child: Container(
-                                    padding: EdgeInsets.all(4.r),
-                                    decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Colors.red,
-                                    ),
-                                    child: Icon(
-                                      Icons.delete,
-                                      color: Colors.white,
-                                      size: 14.r,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
+                          ),
                         ),
-                      ),
-                    );
-                  }),
-                  if (!widget.isReadOnly && widget.waste.photos.length < 3)
-                    GestureDetector(
-                      onTap: () async {
-                        final imageSource =
-                            await ImageHelper.showPickerDialog(context);
-                        if (imageSource == null) {
-                          return;
-                        }
+                    ],
+                  ),
+                ),
+              );
+            }),
+            if (!widget.isReadOnly && photosToDisplay.length < 3)
+              GestureDetector(
+                onTap: () async {
+                  final imageSource =
+                      await ImageHelper.showPickerDialog(context);
+                  if (imageSource == null) return;
 
-                        final image =
-                            await ImageHelper.pickImage(source: imageSource);
-                        if (image == null) {
-                          return;
-                        }
+                  final image = await ImageHelper.pickImage(
+                      source: imageSource, imageQuality: 80);
+                  if (image == null) return;
 
-                        setState(() => widget.waste.photos.add(image.path));
-                      },
-                      child: Container(
-                        width: 60.w,
-                        height: 60.h,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10.r),
-                          color: Colors.grey[100],
-                        ),
-                        child: const Icon(Icons.add, color: Colors.grey),
-                      ),
-                    ),
-                ],
+                  setState(() => photosToDisplay.add(image.path));
+                },
+                child: Container(
+                  width: 60.w,
+                  height: 60.h,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10.r),
+                    color: Colors.grey[100],
+                  ),
+                  child: const Icon(Icons.add, color: Colors.grey),
+                ),
               ),
-              _buildErrorMessage((_) => _validatePhotos(widget.waste.photos)),
-            ],
-          );
-        },
-      );
-    }
+          ],
+        );
+      },
+    );
   }
 
-  Widget _buildErrorMessage(String? Function(String? value) validator) {
+  Widget _buildImageWidget(String path) {
+    final double imageSize = 60.r;
+    final double borderRadius = 10.r;
+
+    Widget buildErrorIcon() {
+      return Icon(
+        Icons.broken_image_outlined,
+        color: Colors.grey,
+        size: imageSize,
+      );
+    }
+
+    Widget imageWidget;
+    if (Uri.tryParse(path)?.hasScheme ?? false) {
+      imageWidget = CachedNetworkImage(
+        imageUrl: path,
+        width: imageSize,
+        height: imageSize,
+        fit: BoxFit.cover,
+        progressIndicatorBuilder: (_, __, ___) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF00CE68)),
+          );
+        },
+        errorWidget: (_, __, ___) => buildErrorIcon(),
+      );
+    } else {
+      imageWidget = Image.file(
+        File(path),
+        width: imageSize,
+        height: imageSize,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => buildErrorIcon(),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: imageWidget,
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String hintText) {
+    return TextField(
+      controller: controller,
+      readOnly: widget.isReadOnly,
+      textAlign: TextAlign.right,
+      decoration: InputDecoration(
+        hintText: hintText,
+        border: InputBorder.none,
+        isDense: true,
+        contentPadding: EdgeInsets.zero,
+      ),
+      style: TextStyle(fontSize: 16.sp),
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+    );
+  }
+
+  Widget _buildErrorMessage(String? Function(String? value)? validator) {
     return FormField(
       validator: validator,
       builder: (field) {

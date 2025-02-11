@@ -1,10 +1,17 @@
-import 'dart:developer';
-
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/recycle_page/address_card.dart';
-import 'package:rubbish_detection/pages/recycle_page/recycle_page.dart';
+import 'package:rubbish_detection/pages/recycle_page/order_status_page.dart';
+import 'package:rubbish_detection/pages/recycle_page/recycle_vm.dart';
 import 'package:rubbish_detection/pages/recycle_page/waste_card.dart';
+import 'package:rubbish_detection/repository/data/order_address_bean.dart';
+import 'package:rubbish_detection/repository/data/order_bean.dart';
+import 'package:rubbish_detection/repository/data/order_waste_bean.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 
 class OrderFormPage extends StatefulWidget {
   const OrderFormPage({super.key});
@@ -14,10 +21,13 @@ class OrderFormPage extends StatefulWidget {
 }
 
 class _OrderFormPageState extends State<OrderFormPage> {
-  final _order = Order(address: Address(), waste: Waste(photos: []));
+  final _order =
+      OrderBean(address: OrderAddressBean(), waste: OrderWasteBean());
 
   final _wasteFormKey = GlobalKey<FormState>();
   final _addressFormKey = GlobalKey<FormState>();
+
+  final _localPhotoPaths = <String>[];
 
   late ValueNotifier<double> _totalPrice;
 
@@ -33,20 +43,20 @@ class _OrderFormPageState extends State<OrderFormPage> {
     super.dispose();
   }
 
-  // 计算总价
-  void _calculateTotal() {
-    final weightInKg = (_order.waste.unit == "g")
-        ? (double.tryParse(_order.waste.weight ?? "") ?? 0) / 1000
-        : double.tryParse(_order.waste.weight ?? "") ?? 0;
+  // 计算预估价格
+  void _calEstimatedPrice() {
+    final weightInKg = (_order.waste?.unit == 0)
+        ? (_order.waste?.weight ?? 0) / 1000
+        : _order.waste?.weight ?? 0;
 
     const pricingRules = {
-      "0": [0.2, 0.3, 0.4], // 干垃圾
-      "1": [0.4, 0.6, 0.8], // 湿垃圾
-      "2": [1.5, 2.0, 2.5], // 可回收物
-      "3": [5.0, 6.0, 7.0], // 有害垃圾
+      0: [0.2, 0.3, 0.4], // 干垃圾
+      1: [0.4, 0.6, 0.8], // 湿垃圾
+      2: [1.5, 2.0, 2.5], // 可回收物
+      3: [5.0, 6.0, 7.0], // 有害垃圾
     };
 
-    final prices = pricingRules[_order.waste.type];
+    final prices = pricingRules[_order.waste?.type];
     if (prices != null && weightInKg > 0) {
       if (weightInKg <= 20) {
         _order.estimatedPrice = weightInKg * prices[0];
@@ -126,7 +136,8 @@ class _OrderFormPageState extends State<OrderFormPage> {
               child: WasteCard(
                 formKey: _wasteFormKey,
                 waste: _order.waste,
-                onCalculateTotal: _calculateTotal,
+                onCalEstimatedPrice: _calEstimatedPrice,
+                localPhotoPaths: _localPhotoPaths,
               ),
             ),
             SliverToBoxAdapter(child: SizedBox(height: 16.h)),
@@ -175,9 +186,9 @@ class _OrderFormPageState extends State<OrderFormPage> {
                     ),
                     ValueListenableBuilder(
                       valueListenable: _totalPrice,
-                      builder: (context, totalPrice, child) {
+                      builder: (context, price, child) {
                         return Text(
-                          totalPrice.toStringAsFixed(2),
+                          price.toStringAsFixed(2),
                           style: TextStyle(
                             fontSize: 24.sp,
                             fontWeight: FontWeight.w600,
@@ -192,16 +203,7 @@ class _OrderFormPageState extends State<OrderFormPage> {
             ),
             const Spacer(),
             ElevatedButton(
-              onPressed: () {
-                // TODO: 向后端提交订单并跳转到订单详情页
-                final isAddressValid =
-                    _addressFormKey.currentState?.validate() ?? false;
-                final isWasteValid =
-                    _wasteFormKey.currentState?.validate() ?? false;
-                if (isAddressValid && isWasteValid) {
-                  log("${_order.address.toJson()}, ${_order.waste.toJson()}");
-                }
-              },
+              onPressed: _submitOrder,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00CE68),
                 foregroundColor: Colors.white,
@@ -220,5 +222,44 @@ class _OrderFormPageState extends State<OrderFormPage> {
         ),
       ),
     );
+  }
+
+  void _submitOrder() async {
+    final isAddressValid = _addressFormKey.currentState?.validate() ?? false;
+    final isWasteValid = _wasteFormKey.currentState?.validate() ?? false;
+
+    if (!isAddressValid || !isWasteValid) return;
+
+    CustomHelper.showSnackBar(context, "正在创建订单，请稍后...",
+        defaultStyle: true, duration: const Duration(seconds: 10));
+
+    _order.orderStatus = 0;
+    _order.orderDate = DateTime.now().toIso8601String();
+    _order.waste?.photos = _localPhotoPaths
+        .map((photo) => base64Encode(File(photo).readAsBytesSync()))
+        .toList();
+    _order.userId =
+        await Provider.of<AuthViewModel>(context, listen: false).getUserId();
+
+    if (!mounted) return;
+    try {
+      final (order, message) =
+          await Provider.of<RecycleViewModel>(context, listen: false)
+              .createOrder(_order);
+
+      if (message == null) {
+        CustomHelper.showSnackBar(context, "订单创建成功");
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) => OrderStatusPage(order: order!)),
+        );
+      } else {
+        CustomHelper.showSnackBar(context, "订单创建失败: $message", success: false);
+      }
+    } catch (e) {
+      CustomHelper.showSnackBar(context, "网络异常，请稍后再试");
+    }
   }
 }
