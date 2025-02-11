@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pull_to_refresh_flutter3/pull_to_refresh_flutter3.dart';
+import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/discovery_page/discovery_vm.dart';
 import 'package:rubbish_detection/pages/quiz_page/quiz_page.dart';
 import 'package:rubbish_detection/pages/recycle_page/recycle_page.dart';
@@ -117,8 +118,21 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
               Expanded(
                 child: _buildActivityCard(
                   image: "assets/images/delivery.png",
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const RecyclingPage())),
+                  onTap: () async {
+                    final isLogged =
+                        await Provider.of<AuthViewModel>(context, listen: false)
+                            .isLogged();
+                    if (!mounted) return;
+                    if (!isLogged) {
+                      CustomHelper.showSnackBar(context, "请先登录",
+                          success: false);
+                      return;
+                    }
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const RecyclingPage()));
+                  },
                 ),
               ),
               SizedBox(width: 16.w),
