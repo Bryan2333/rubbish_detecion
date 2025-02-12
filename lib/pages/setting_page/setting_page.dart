@@ -7,6 +7,7 @@ import 'package:rubbish_detection/pages/setting_page/change_password_page.dart';
 import 'package:rubbish_detection/pages/setting_page/profile_edit_page.dart';
 import 'package:rubbish_detection/repository/data/user_bean.dart';
 import 'package:rubbish_detection/utils/custom_helper.dart';
+import 'package:rubbish_detection/utils/route_helper.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key, this.user});
@@ -46,46 +47,22 @@ class _SettingsPageState extends State<SettingsPage> {
                 _buildSettingsItem(
                   icon: Icons.person_outline,
                   title: "修改个人信息",
-                  onTap: _requireLogin(() {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return ProfileEditPage(user: widget.user!);
-                        },
-                      ),
-                    );
-                  }),
+                  onTap: _requireLogin(() => RouteHelper.push(
+                      context, ProfileEditPage(user: widget.user!))),
                 ),
                 _buildDivider(),
                 _buildSettingsItem(
                   icon: Icons.lock_outline,
                   title: "修改密码",
-                  onTap: _requireLogin(() {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return ChangePasswordPage(user: widget.user!);
-                        },
-                      ),
-                    );
-                  }),
+                  onTap: _requireLogin(() => RouteHelper.push(
+                      context, ChangePasswordPage(user: widget.user!))),
                 ),
                 _buildDivider(),
                 _buildSettingsItem(
                   icon: Icons.email_outlined,
                   title: "修改邮箱",
-                  onTap: _requireLogin(() {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return ChangeEmailPage(user: widget.user!);
-                        },
-                      ),
-                    );
-                  }),
+                  onTap: _requireLogin(() => RouteHelper.push(
+                      context, ChangeEmailPage(user: widget.user!))),
                 ),
               ],
             ),

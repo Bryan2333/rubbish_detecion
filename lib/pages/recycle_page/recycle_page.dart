@@ -8,6 +8,7 @@ import 'package:rubbish_detection/pages/recycle_page/order_list_page.dart';
 import 'package:rubbish_detection/pages/recycle_page/order_status_page.dart';
 import 'package:rubbish_detection/pages/recycle_page/recycle_vm.dart';
 import 'package:rubbish_detection/repository/data/order_bean.dart';
+import 'package:rubbish_detection/utils/route_helper.dart';
 
 class RecyclingPage extends StatefulWidget {
   const RecyclingPage({super.key});
@@ -137,10 +138,7 @@ class _RecyclingPageState extends State<RecyclingPage> {
       actions: [
         IconButton(
           icon: Icon(Icons.add_outlined, size: 30.r),
-          onPressed: () {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const OrderFormPage()));
-          },
+          onPressed: () => RouteHelper.push(context, const OrderFormPage()),
         )
       ],
     );
@@ -168,17 +166,9 @@ class _RecyclingPageState extends State<RecyclingPage> {
         children: [
           // 标题栏
           GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => OrderListPage(
-                    title: title,
-                    orderStatus: orderStatus,
-                  ),
-                ),
-              ).then((_) => _initRecentOrders());
-            },
+            onTap: () => RouteHelper.push(context,
+                    OrderListPage(title: title, orderStatus: orderStatus))
+                .then((_) => _initRecentOrders()),
             child: Container(
               padding: EdgeInsets.all(16.r),
               child: Row(
@@ -274,14 +264,7 @@ class _RecyclingPageState extends State<RecyclingPage> {
   // 订单预览项
   Widget _buildOrderPreviewItem(OrderBean order, {bool showBorder = true}) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => OrderStatusPage(order: order),
-          ),
-        );
-      },
+      onTap: () => RouteHelper.push(context, OrderStatusPage(order: order)),
       child: Container(
         padding: EdgeInsets.all(16.r),
         decoration: BoxDecoration(

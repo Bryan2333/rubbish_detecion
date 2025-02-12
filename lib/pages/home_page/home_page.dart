@@ -13,6 +13,7 @@ import 'package:rubbish_detection/pages/home_page/home_vm.dart';
 import 'package:rubbish_detection/pages/recognization_result_page/recognization_result_page.dart';
 import 'package:rubbish_detection/pages/rubbish_type_desc_page/rubbish_type_desc_page.dart';
 import 'package:rubbish_detection/utils/image_helper.dart';
+import 'package:rubbish_detection/utils/route_helper.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -144,17 +145,7 @@ class _HomePageState extends State<HomePage> {
   void _onSearchSubmitted(query) {
     if (query.trim().isEmpty) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) {
-          return RecognizationResultPage(
-            rubbishName: query,
-            imagePath: null,
-          );
-        },
-      ),
-    );
+    RouteHelper.push(context, RecognizationResultPage(rubbishName: query));
   }
 
   Widget _buildBanner() {
@@ -236,7 +227,7 @@ class _HomePageState extends State<HomePage> {
               _buildFeatureItem(
                 icon: "assets/images/microphone.png",
                 title: "语音搜索",
-                onTap: _navigateToRecordPage,
+                onTap: () => RouteHelper.push(context, const RecordPage()),
               ),
               _buildFeatureItem(
                 icon: "assets/images/collection.png",
@@ -250,17 +241,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _navigateToRecordPage() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) {
-          return const RecordPage();
-        },
-      ),
-    );
-  }
-
   void _navigateToCollectionPage() async {
     if (!await Provider.of<AuthViewModel>(context, listen: false).isLogged()) {
       if (!mounted) return;
@@ -269,14 +249,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) {
-          return const CollectionPage();
-        },
-      ),
-    );
+    RouteHelper.push(context, const CollectionPage());
   }
 
   Widget _buildFeatureItem({
@@ -364,24 +337,15 @@ class _HomePageState extends State<HomePage> {
                 return _buildCategoryCard(
                   title: _categoryCards[index]["title"] as String,
                   imagePath: _categoryCards[index]["image"] as String,
-                  onTap: () => _navigateToRubbishDescPage(
-                      _categoryCards[index]["type"] as int),
+                  onTap: () => RouteHelper.push(
+                      context,
+                      RubbishTypeDescPage(
+                          type: _categoryCards[index]["type"] as int)),
                 );
               },
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _navigateToRubbishDescPage(int type) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) {
-          return RubbishTypeDescPage(type: type);
-        },
       ),
     );
   }
@@ -457,17 +421,8 @@ class _HomePageState extends State<HomePage> {
     if (rubbish == null) return;
 
     if (mounted == false) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) {
-          return RecognizationResultPage(
-            rubbishName: rubbish,
-            imagePath: image.path,
-          );
-        },
-      ),
-    );
+    RouteHelper.push(context,
+        RecognizationResultPage(rubbishName: rubbish, imagePath: image.path));
   }
 
   Future<String?> _predict(File file) async {

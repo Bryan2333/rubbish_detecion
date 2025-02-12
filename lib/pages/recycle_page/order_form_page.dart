@@ -12,6 +12,7 @@ import 'package:rubbish_detection/repository/data/order_address_bean.dart';
 import 'package:rubbish_detection/repository/data/order_bean.dart';
 import 'package:rubbish_detection/repository/data/order_waste_bean.dart';
 import 'package:rubbish_detection/utils/custom_helper.dart';
+import 'package:rubbish_detection/utils/route_helper.dart';
 
 class OrderFormPage extends StatefulWidget {
   const OrderFormPage({super.key});
@@ -250,11 +251,7 @@ class _OrderFormPageState extends State<OrderFormPage> {
       if (message == null) {
         CustomHelper.showSnackBar(context, "订单创建成功");
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => OrderStatusPage(order: order!)),
-        );
+        RouteHelper.pushReplacement(context, OrderStatusPage(order: order!));
       } else {
         CustomHelper.showSnackBar(context, "订单创建失败: $message", success: false);
       }

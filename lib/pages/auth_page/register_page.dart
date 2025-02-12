@@ -8,6 +8,7 @@ import 'package:rubbish_detection/pages/auth_page/login_page.dart';
 import 'package:rubbish_detection/repository/api.dart';
 import 'package:rubbish_detection/utils/custom_helper.dart';
 import 'package:rubbish_detection/utils/image_helper.dart';
+import 'package:rubbish_detection/utils/route_helper.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -611,17 +612,8 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
         TextButton(
-          onPressed: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (context) {
-                  return const LoginPage();
-                },
-              ),
-              (route) => route.isFirst,
-            );
-          },
+          onPressed: () => RouteHelper.pushAndRemoveUntil(
+              context, const LoginPage(), (route) => route.isFirst),
           child: Text(
             "立即登录",
             style: TextStyle(
@@ -702,17 +694,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
         await Future.delayed(const Duration(seconds: 2));
 
-        if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (_) {
-                return const LoginPage();
-              },
-            ),
-            (route) => route.isFirst,
-          );
-        }
+        if (!mounted) return;
+        RouteHelper.pushAndRemoveUntil(
+            context, const LoginPage(), (route) => route.isFirst);
       } else {
         CustomHelper.showSnackBar(context, "注册失败：$message", success: false);
       }

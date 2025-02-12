@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rubbish_detection/pages/quiz_page/quiz_page.dart';
+import 'package:rubbish_detection/utils/route_helper.dart';
 
 class QuizResultPage extends StatefulWidget {
   const QuizResultPage(
@@ -241,14 +242,7 @@ class _QuizResultPageState extends State<QuizResultPage>
             child: _buildButton(
               text: "再测一次",
               onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) {
-                      return const QuizPage();
-                    },
-                  ),
-                );
+                RouteHelper.pushReplacement(context, const QuizPage());
               },
             ),
           ),

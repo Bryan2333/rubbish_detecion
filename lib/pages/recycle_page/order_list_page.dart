@@ -7,6 +7,7 @@ import 'package:rubbish_detection/pages/recycle_page/order_status_page.dart';
 import 'package:rubbish_detection/pages/recycle_page/recycle_vm.dart';
 import 'package:rubbish_detection/repository/data/order_bean.dart';
 import 'package:rubbish_detection/utils/custom_helper.dart';
+import 'package:rubbish_detection/utils/route_helper.dart';
 
 class OrderListPage extends StatefulWidget {
   const OrderListPage({super.key, required this.title, this.orderStatus});
@@ -185,14 +186,7 @@ class _OrderListPageState extends State<OrderListPage> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => OrderStatusPage(order: order),
-              ),
-            );
-          },
+          onTap: () => RouteHelper.push(context, OrderStatusPage(order: order)),
           borderRadius: BorderRadius.circular(16.r),
           child: Container(
             padding: EdgeInsets.all(16.r),

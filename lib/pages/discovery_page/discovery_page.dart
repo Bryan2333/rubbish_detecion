@@ -9,6 +9,7 @@ import 'package:rubbish_detection/pages/quiz_page/quiz_page.dart';
 import 'package:rubbish_detection/pages/recycle_page/recycle_page.dart';
 import 'package:rubbish_detection/repository/data/news_bean.dart';
 import 'package:rubbish_detection/utils/custom_helper.dart';
+import 'package:rubbish_detection/utils/route_helper.dart';
 import 'package:rubbish_detection/widget/web/webview_page.dart';
 
 class DiscoveryPage extends StatefulWidget {
@@ -128,10 +129,7 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
                           success: false);
                       return;
                     }
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const RecyclingPage()));
+                    RouteHelper.push(context, const RecyclingPage());
                   },
                 ),
               ),
@@ -139,8 +137,7 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
               Expanded(
                 child: _buildActivityCard(
                   image: "assets/images/quiz.png",
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const QuizPage())),
+                  onTap: () => RouteHelper.push(context, const QuizPage()),
                 ),
               ),
             ],
@@ -243,12 +240,8 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => WebViewPage(loadResource: news.url ?? ""),
-            ),
-          ),
+          onTap: () => RouteHelper.push(
+              context, WebViewPage(loadResource: news.url ?? "")),
           borderRadius: BorderRadius.circular(16.r),
           child: Container(
             padding: EdgeInsets.all(12.r),

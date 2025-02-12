@@ -9,6 +9,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rubbish_detection/pages/recognization_result_page/recognization_result_page.dart';
 import 'package:rubbish_detection/pages/record_page/record_vm.dart';
 import 'package:rubbish_detection/utils/custom_helper.dart';
+import 'package:rubbish_detection/utils/route_helper.dart';
 
 class RecordPage extends StatefulWidget {
   const RecordPage({super.key});
@@ -62,9 +63,7 @@ class _RecordPageState extends State<RecordPage>
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         elevation: 0,
         backgroundColor: Colors.white,
@@ -293,14 +292,8 @@ class _RecordPageState extends State<RecordPage>
     if (res?.result?.isEmpty == true) {
       CustomHelper.showSnackBar(context, "识别失败，请重新尝试", success: false);
     } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => RecognizationResultPage(
-            rubbishName: res?.result ?? "",
-          ),
-        ),
-      );
+      RouteHelper.push(
+          context, RecognizationResultPage(rubbishName: res?.result ?? ""));
     }
   }
 }

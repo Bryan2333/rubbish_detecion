@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:rubbish_detection/pages/quiz_page/quiz_result_page.dart';
 import 'package:rubbish_detection/pages/quiz_page/quiz_vm.dart';
 import 'package:rubbish_detection/repository/data/quiz_bean.dart';
+import 'package:rubbish_detection/utils/route_helper.dart';
 
 class QuizPage extends StatefulWidget {
   const QuizPage({super.key});
@@ -97,15 +98,11 @@ class _QuizPageState extends State<QuizPage> {
       _selectedOptionIndexNotifier.value = null;
       _progressNotifier.value = 0;
     } else {
-      Navigator.pushReplacement(
+      RouteHelper.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) {
-            return QuizResultPage(
-              correctAnswers: correctAnswers,
-              totalQuestions: _quizViewModel.quizList.length,
-            );
-          },
+        QuizResultPage(
+          correctAnswers: correctAnswers,
+          totalQuestions: _quizViewModel.quizList.length,
         ),
       );
     }

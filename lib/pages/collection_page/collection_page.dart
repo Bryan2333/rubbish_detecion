@@ -9,6 +9,7 @@ import 'package:rubbish_detection/pages/collection_page/collection_vm.dart';
 import 'package:rubbish_detection/pages/recognization_result_page/recognization_result_page.dart';
 import 'package:rubbish_detection/repository/data/recognition_collection_bean.dart';
 import 'package:rubbish_detection/utils/custom_helper.dart';
+import 'package:rubbish_detection/utils/route_helper.dart';
 
 class CollectionPage extends StatefulWidget {
   const CollectionPage({super.key});
@@ -181,15 +182,12 @@ class _CollectionPageState extends State<CollectionPage>
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-            Navigator.push(
+            RouteHelper.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => RecognizationResultPage(
+              RecognizationResultPage(
                   rubbishName: collection.rubbishName ?? "",
                   imagePath: collection.image,
-                  isCollected: true,
-                ),
-              ),
+                  isCollected: true),
             );
           },
           borderRadius: BorderRadius.circular(16.r),

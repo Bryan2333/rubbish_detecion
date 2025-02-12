@@ -6,6 +6,7 @@ import 'package:rubbish_detection/pages/auth_page/forgot_password_page.dart';
 import 'package:rubbish_detection/pages/auth_page/register_page.dart';
 import 'package:rubbish_detection/pages/tab_page/tab_page.dart';
 import 'package:rubbish_detection/utils/custom_helper.dart';
+import 'package:rubbish_detection/utils/route_helper.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -272,16 +273,7 @@ class _LoginPageState extends State<LoginPage> {
     return Container(
       alignment: Alignment.centerRight,
       child: TextButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) {
-                return const ForgotPasswordPage();
-              },
-            ),
-          );
-        },
+        onPressed: () => RouteHelper.push(context, const ForgotPasswordPage()),
         child: Text(
           "忘记密码？",
           style: TextStyle(
@@ -330,16 +322,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
         TextButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) {
-                  return const RegisterPage();
-                },
-              ),
-            );
-          },
+          onPressed: () => RouteHelper.push(context, const RegisterPage()),
           child: Text(
             "立即注册",
             style: TextStyle(
@@ -370,13 +353,9 @@ class _LoginPageState extends State<LoginPage> {
 
         await Future.delayed(const Duration(milliseconds: 1500));
 
-        if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const TabPage()),
-            (route) => false,
-          );
-        }
+        if (!mounted) return;
+        RouteHelper.pushAndRemoveUntil(
+            context, const TabPage(), (_) => false);
       } else {
         CustomHelper.showSnackBar(context, "登录失败：$message", success: false);
       }

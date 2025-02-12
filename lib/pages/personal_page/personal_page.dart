@@ -11,6 +11,7 @@ import 'package:rubbish_detection/pages/setting_page/setting_page.dart';
 import 'package:rubbish_detection/pages/tab_page/tab_page.dart';
 import 'package:rubbish_detection/repository/data/user_bean.dart';
 import 'package:rubbish_detection/utils/custom_helper.dart';
+import 'package:rubbish_detection/utils/route_helper.dart';
 
 class PersonalPage extends StatefulWidget {
   const PersonalPage({super.key});
@@ -182,12 +183,7 @@ class _PersonalPageState extends State<PersonalPage> {
         ),
         SizedBox(height: 10.h),
         GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const LoginPage()),
-            );
-          },
+          onTap: () => RouteHelper.push(context, const LoginPage()),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -288,32 +284,21 @@ class _PersonalPageState extends State<PersonalPage> {
               _buildFunctionItem(
                 icon: Icons.feedback_outlined,
                 title: "意见反馈",
-                onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const FeedbackPage()));
-                },
+                onTap: () => RouteHelper.push(context, const FeedbackPage()),
               ),
               Divider(color: Colors.grey[300], thickness: 0.5.h),
               _buildFunctionItem(
                 icon: Icons.settings_outlined,
                 title: "设置中心",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) {
-                      return SettingsPage(user: vm.user);
-                    }),
-                  ).then((_) => _initUserData());
-                },
+                onTap: () =>
+                    RouteHelper.push(context, SettingsPage(user: vm.user))
+                        .then((_) => _initUserData()),
               ),
               Divider(color: Colors.grey[300], thickness: 0.5.h),
               _buildFunctionItem(
                 icon: Icons.info_outline_rounded,
                 title: "关于我们",
-                onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const AboutUsPage()));
-                },
+                onTap: () => RouteHelper.push(context, const AboutUsPage()),
               ),
               if (vm.user != null) ...[
                 Divider(color: Colors.grey[300], thickness: 0.5.h),
@@ -409,13 +394,8 @@ class _PersonalPageState extends State<PersonalPage> {
       if (statusCode == 1000) {
         CustomHelper.showSnackBar(context, "退出登录成功");
 
-        if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const TabPage()),
-            (predicate) => false,
-          );
-        }
+        if (!mounted) return;
+        RouteHelper.pushAndRemoveUntil(context, const TabPage(), (_) => false);
       } else {
         CustomHelper.showSnackBar(context, "退出登录失败", success: false);
       }
