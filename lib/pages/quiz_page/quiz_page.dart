@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:rubbish_detection/pages/quiz_page/quiz_result_page.dart';
 import 'package:rubbish_detection/pages/quiz_page/quiz_vm.dart';
 import 'package:rubbish_detection/repository/data/quiz_bean.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 import 'package:rubbish_detection/utils/route_helper.dart';
 
 class QuizPage extends StatefulWidget {
@@ -118,7 +119,7 @@ class _QuizPageState extends State<QuizPage> {
         body: Consumer<QuizViewModel>(
           builder: (context, vm, child) {
             if (vm.isLoading == true) {
-              return const Center(child: CircularProgressIndicator());
+              return CustomHelper.progressIndicator;
             } else if (vm.isLoading == false && vm.quizList.isEmpty) {
               return _buildLoadFailed();
             } else {

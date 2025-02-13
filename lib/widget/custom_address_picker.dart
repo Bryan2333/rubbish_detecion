@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 
 class CustomAddressPicker extends StatefulWidget {
   final ValueChanged<Map<String, String>>? onAddressSelected;
@@ -150,7 +151,7 @@ class _CustomAddressPickerState extends State<CustomAddressPicker> {
       height: 350.h,
       padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 10.w),
       child: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? CustomHelper.progressIndicator
           : Column(
               children: [
                 _buildHeader(),

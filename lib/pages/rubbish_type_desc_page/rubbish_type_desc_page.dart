@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:rubbish_detection/pages/rubbish_type_desc_page/rubbish_type_desc_vm.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 
 class RubbishTypeDescPage extends StatefulWidget {
   const RubbishTypeDescPage({super.key, required this.type});
@@ -80,7 +81,7 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
           child: Consumer<RubbishTypeDescViewModel>(
             builder: (context, vm, child) {
               if (vm.desc == null) {
-                return const Center(child: CircularProgressIndicator());
+                return CustomHelper.progressIndicator;
               } else {
                 return SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -88,7 +89,8 @@ class _RubbishTypeDescPageState extends State<RubbishTypeDescPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 介绍卡片
-                      _buildDescCard(vm.desc?.name ?? "", vm.desc?.description ?? ""),
+                      _buildDescCard(
+                          vm.desc?.name ?? "", vm.desc?.description ?? ""),
                       SizedBox(height: 24.h),
                       // 投放要求
                       _buildSection(

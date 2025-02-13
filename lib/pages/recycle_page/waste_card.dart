@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rubbish_detection/repository/data/order_waste_bean.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 import 'package:rubbish_detection/utils/image_helper.dart';
 
 class WasteCard extends StatefulWidget {
@@ -439,11 +440,8 @@ class _WasteCardState extends State<WasteCard>
         width: imageSize,
         height: imageSize,
         fit: BoxFit.cover,
-        progressIndicatorBuilder: (_, __, ___) {
-          return const Center(
-            child: CircularProgressIndicator(color: Color(0xFF00CE68)),
-          );
-        },
+        progressIndicatorBuilder: (_, __, ___) =>
+            CustomHelper.progressIndicator,
         errorWidget: (_, __, ___) => buildErrorIcon(),
       );
     } else {

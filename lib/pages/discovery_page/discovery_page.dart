@@ -199,13 +199,9 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
       Consumer<DiscoveryViewModel>(
         builder: (context, vm, child) {
           if (vm.newsList.isEmpty) {
-            return const SliverFillRemaining(
+            return SliverFillRemaining(
               hasScrollBody: false,
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFF00CE68),
-                ),
-              ),
+              child: CustomHelper.progressIndicator,
             );
           }
 

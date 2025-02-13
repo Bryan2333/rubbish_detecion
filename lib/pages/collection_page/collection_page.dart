@@ -101,9 +101,7 @@ class _CollectionPageState extends State<CollectionPage>
           child: Consumer<CollectionViewModel>(
             builder: (context, vm, child) {
               if (vm.isLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF00CE68)),
-                );
+                return CustomHelper.progressIndicator;
               } else if (vm.collections.isEmpty) {
                 return _buildEmptyState();
               } else {
@@ -236,8 +234,7 @@ class _CollectionPageState extends State<CollectionPage>
                 );
               },
               fit: BoxFit.cover,
-              placeholder: (_, __) =>
-                  const CircularProgressIndicator(color: Color(0xFF00CE68)),
+              placeholder: (_, __) => CustomHelper.progressIndicator,
               errorWidget: (_, __, ___) =>
                   const Icon(Icons.broken_image_outlined, color: Colors.grey),
             )

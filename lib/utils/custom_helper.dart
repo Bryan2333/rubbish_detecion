@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CustomHelper {
+  static Widget get progressIndicator =>
+      const Center(child: CircularProgressIndicator(color: Color(0xFF00CE68)));
+
   static void showSnackBar(
     BuildContext context,
     String message, {

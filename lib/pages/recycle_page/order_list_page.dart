@@ -96,9 +96,7 @@ class _OrderListPageState extends State<OrderListPage> {
                 color: Color(0xFF00CE68),
               ),
               child: (vm.isLoading && !vm.hasMore(widget.orderStatus))
-                  ? const Center(
-                      child:
-                          CircularProgressIndicator(color: Color(0xFF00CE68)))
+                  ? CustomHelper.progressIndicator
                   : vm.currentOrders.isEmpty
                       ? _buildEmptyState()
                       : _buildOrderList(vm.currentOrders),

@@ -8,6 +8,7 @@ import 'package:rubbish_detection/pages/recycle_page/order_list_page.dart';
 import 'package:rubbish_detection/pages/recycle_page/order_status_page.dart';
 import 'package:rubbish_detection/pages/recycle_page/recycle_vm.dart';
 import 'package:rubbish_detection/repository/data/order_bean.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 import 'package:rubbish_detection/utils/route_helper.dart';
 
 class RecyclingPage extends StatefulWidget {
@@ -51,9 +52,7 @@ class _RecyclingPageState extends State<RecyclingPage> {
         child: Consumer<RecycleViewModel>(
           builder: (context, vm, child) {
             if (vm.isLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: Color(0xFF00CE68)),
-              );
+              return CustomHelper.progressIndicator;
             } else {
               final pendingOrders = vm.currentOrders
                   .where((order) => order.orderStatus == 0)

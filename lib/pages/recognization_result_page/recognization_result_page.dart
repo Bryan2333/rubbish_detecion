@@ -103,9 +103,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
         body: Consumer<RecognizationResultViewModel>(
             builder: (context, vm, child) {
           if (vm.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF00CE68)),
-            );
+            return CustomHelper.progressIndicator;
           } else if (vm.rubbishList.isEmpty) {
             return _buildFailedContent();
           } else {
@@ -230,8 +228,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
         width: 180.w,
         height: 140.h,
         fit: BoxFit.cover,
-        placeholder: (_, __) =>
-            const CircularProgressIndicator(color: Color(0xFF00CE68)),
+        placeholder: (_, __) => CustomHelper.progressIndicator,
         errorWidget: (_, __, ___) => const Icon(Icons.broken_image_outlined),
       );
     } else {

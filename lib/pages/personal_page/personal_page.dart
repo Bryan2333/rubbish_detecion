@@ -136,9 +136,7 @@ class _PersonalPageState extends State<PersonalPage> {
                   backgroundImage: imageProvider,
                 );
               },
-              placeholder: (_, __) => const CircularProgressIndicator(
-                color: Color(0xFF00CE68),
-              ),
+              placeholder: (_, __) => CustomHelper.progressIndicator,
               errorWidget: (_, __, ___) => defaultAvatar,
             )
           : defaultAvatar,
