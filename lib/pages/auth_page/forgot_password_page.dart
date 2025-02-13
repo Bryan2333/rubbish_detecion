@@ -96,43 +96,31 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     final isUsernameValid = _usernameFieldKey.currentState?.validate() ?? false;
     final isEmailValid = _emailFieldKey.currentState?.validate() ?? false;
 
-    if (!isUsernameValid || !isEmailValid) {
-      return;
-    }
+    if (!isUsernameValid || !isEmailValid) return;
 
-    try {
-      final message = await Api.instance.getResetPasswordVerifyCode(
-          _usernameController.text.trim(), _emailController.text.trim());
-
-      if (mounted == false) return;
-      if (message == null) {
-        CustomHelper.showSnackBar(context, "验证码发送成功，请注意查收");
-        _startCountdown();
-      } else {
-        CustomHelper.showSnackBar(context, "获取验证码失败：$message", success: false);
-      }
-    } catch (e) {
-      CustomHelper.showSnackBar(context, "网络异常，请稍后重试", success: false);
-    }
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: Api.instance.getResetPasswordVerifyCode(
+          _usernameController.text.trim(), _emailController.text.trim()),
+      onSuccess: (_) => _startCountdown(),
+      successMessage: "验证码发送成功，请注意查收",
+      failurePrefix: "获取验证码失败",
+    );
   }
 
   void _handleResetPassword() async {
-    if (_formKey.currentState?.validate() == false) {
-      return;
-    }
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    try {
-      final message = await Api.instance.resetPassword(
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: Api.instance.resetPassword(
         _usernameController.text.trim(),
         _emailController.text.trim(),
         _newPasswordNotifier.value.trim(),
         _confirmPasswordController.text.trim(),
         _codeController.text.trim(),
-      );
-
-      if (!mounted) return;
-      if (message == null) {
-        CustomHelper.showSnackBar(context, "密码重置成功", success: true);
+      ),
+      onSuccess: (_) async {
         _usernameController.clear();
         _emailController.clear();
         _codeController.clear();
@@ -141,16 +129,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
         await Future.delayed(const Duration(milliseconds: 1500));
 
-        if (mounted) {
-          Navigator.pop(context);
-        }
-      } else {
-        CustomHelper.showSnackBar(context, "密码重置失败：$message", success: false);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      CustomHelper.showSnackBar(context, "网络异常，请稍后重试", success: false);
-    }
+        if (!mounted) return;
+        Navigator.pop(context);
+      },
+      successMessage: "密码重置成功",
+      failurePrefix: "密码重置失败",
+    );
   }
 
   @override

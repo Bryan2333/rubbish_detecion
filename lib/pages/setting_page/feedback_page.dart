@@ -37,29 +37,16 @@ class _FeedbackPageState extends State<FeedbackPage> {
   }
 
   void _submitFeedback() async {
-    if (_formKey.currentState?.validate() == false) {
-      return;
-    }
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    try {
-      final statusCode = await Api.instance.sendFeedback(
-          _nameController.text.trim(),
-          _emailController.text.trim(),
-          _feedbackController.text.trim());
-
-      if (!mounted) return;
-      if (statusCode == 1000) {
-        CustomHelper.showSnackBar(context, "提交成功，感谢您的反馈");
-        // 清空输入框
-        _nameController.clear();
-        _emailController.clear();
-        _feedbackController.clear();
-      } else {
-        CustomHelper.showSnackBar(context, "提交失败，请稍后再试", success: false);
-      }
-    } catch (e) {
-      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
-    }
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: Api.instance.sendFeedback(_nameController.text.trim(),
+          _emailController.text.trim(), _feedbackController.text.trim()),
+      successMessage: "提交成功，感谢您的反馈",
+      failurePrefix: "提交失败，请稍后再试",
+      successCondition: (result) => result == 1000,
+    );
   }
 
   @override

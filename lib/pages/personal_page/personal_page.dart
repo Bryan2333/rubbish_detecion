@@ -386,21 +386,14 @@ class _PersonalPageState extends State<PersonalPage> {
   }
 
   Future<void> _handleLogout() async {
-    try {
-      final statusCode =
-          await Provider.of<AuthViewModel>(context, listen: false).logout();
-
-      if (!mounted) return;
-      if (statusCode == 1000) {
-        CustomHelper.showSnackBar(context, "退出登录成功");
-
-        if (!mounted) return;
-        RouteHelper.pushAndRemoveUntil(context, const TabPage(), (_) => false);
-      } else {
-        CustomHelper.showSnackBar(context, "退出登录失败", success: false);
-      }
-    } catch (e) {
-      CustomHelper.showSnackBar(context, "网络异常，请稍后重试", success: false);
-    }
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: Provider.of<AuthViewModel>(context, listen: false).logout(),
+      onSuccess: (_) => RouteHelper.pushAndRemoveUntil(
+          context, const TabPage(), (_) => false),
+      successCondition: (result) => result == 1000,
+      successMessage: "退出登录成功",
+      failurePrefix: "退出登录失败",
+    );
   }
 }

@@ -243,20 +243,17 @@ class _OrderFormPageState extends State<OrderFormPage> {
         await Provider.of<AuthViewModel>(context, listen: false).getUserId();
 
     if (!mounted) return;
-    try {
-      final (order, message) =
-          await Provider.of<RecycleViewModel>(context, listen: false)
-              .createOrder(_order);
-
-      if (message == null) {
-        CustomHelper.showSnackBar(context, "订单创建成功");
-
-        RouteHelper.pushReplacement(context, OrderStatusPage(order: order!));
-      } else {
-        CustomHelper.showSnackBar(context, "订单创建失败: $message", success: false);
-      }
-    } catch (e) {
-      CustomHelper.showSnackBar(context, "网络异常，请稍后再试");
-    }
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: Provider.of<RecycleViewModel>(context, listen: false)
+          .createOrder(_order),
+      successMessage: "订单创建成功",
+      onSuccess: (result) {
+        RouteHelper.pushReplacement(
+            context, OrderStatusPage(order: (result?.$1)!));
+      },
+      failurePrefix: "订单创建失败",
+      successCondition: (result) => result?.$2 == null,
+    );
   }
 }

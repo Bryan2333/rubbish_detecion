@@ -337,31 +337,22 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _handleLogin() async {
-    if (_formKey.currentState?.validate() == false) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    try {
-      final message =
-          await Provider.of<AuthViewModel>(context, listen: false).login(
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: Provider.of<AuthViewModel>(context, listen: false).login(
         username: _usernameController.text.trim(),
         password: _passwordController.text.trim(),
         role: _selectedRoleNotifier.value,
-      );
-
-      if (!mounted) return;
-      if (message == null) {
-        CustomHelper.showSnackBar(context, "登录成功", success: true);
-
-        await Future.delayed(const Duration(milliseconds: 1500));
-
+      ),
+      onSuccess: (_) async {
+        await Future.delayed(const Duration(seconds: 1));
         if (!mounted) return;
-        RouteHelper.pushAndRemoveUntil(
-            context, const TabPage(), (_) => false);
-      } else {
-        CustomHelper.showSnackBar(context, "登录失败：$message", success: false);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
-    }
+        RouteHelper.pushAndRemoveUntil(context, const TabPage(), (_) => false);
+      },
+      successMessage: "登录成功",
+      failurePrefix: "登录失败",
+    );
   }
 }

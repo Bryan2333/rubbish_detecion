@@ -642,33 +642,24 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _getVerifyCode() async {
-    if (_emailFieldKey.currentState?.validate() == false) {
-      return;
-    }
+    if (!(_emailFieldKey.currentState?.validate() ?? false)) return;
 
-    try {
-      final message = await Api.instance
-          .getRegisterVerifyCode(_emailController.text.trim());
-
-      if (!mounted) return;
-      if (message == null) {
-        CustomHelper.showSnackBar(context, "验证码发送成功，请检查您的邮箱", success: true);
-        _startCountdown();
-      } else {
-        CustomHelper.showSnackBar(context, "获取验证码失败：$message", success: false);
-      }
-    } catch (e) {
-      CustomHelper.showSnackBar(context, "网络异常，请稍后重试", success: false);
-    }
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall:
+          Api.instance.getRegisterVerifyCode(_emailController.text.trim()),
+      onSuccess: (_) => _startCountdown,
+      successMessage: "验证码发送成功，请检查您的邮箱",
+      failurePrefix: "获取验证码失败",
+    );
   }
 
   Future<void> _handleRegister() async {
-    if (_formKey.currentState?.validate() == false) {
-      return;
-    }
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    try {
-      final message = await Api.instance.register(
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: Api.instance.register(
         _usernameController.text.trim(),
         _passwordController.text.trim(),
         _emailController.text.trim(),
@@ -679,12 +670,8 @@ class _RegisterPageState extends State<RegisterPage> {
         _avatarImageNotifier.value != null
             ? base64Encode(_avatarImageNotifier.value!.readAsBytesSync())
             : null,
-      );
-
-      if (!mounted) return;
-      if (message == null) {
-        CustomHelper.showSnackBar(context, "注册成功");
-
+      ),
+      onSuccess: (_) async {
         _usernameController.clear();
         _passwordController.clear();
         _emailController.clear();
@@ -697,12 +684,9 @@ class _RegisterPageState extends State<RegisterPage> {
         if (!mounted) return;
         RouteHelper.pushAndRemoveUntil(
             context, const LoginPage(), (route) => route.isFirst);
-      } else {
-        CustomHelper.showSnackBar(context, "注册失败：$message", success: false);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      CustomHelper.showSnackBar(context, "网络异常，请稍后重试", success: false);
-    }
+      },
+      successMessage: "注册成功",
+      failurePrefix: "注册失败",
+    );
   }
 }

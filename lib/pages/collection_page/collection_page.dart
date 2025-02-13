@@ -289,17 +289,12 @@ class _CollectionPageState extends State<CollectionPage>
   }
 
   void _handleUnCollect(RecognitionCollectionBean collection) async {
-    try {
-      final uncollected = await _collectionViewModel.unCollect(collection);
-
-      if (!mounted) return;
-      if (uncollected) {
-        CustomHelper.showSnackBar(context, "取消收藏成功");
-      } else {
-        CustomHelper.showSnackBar(context, "取消收藏失败", success: false);
-      }
-    } catch (e) {
-      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
-    }
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: _collectionViewModel.unCollect(collection),
+      successMessage: "取消收藏成功",
+      failurePrefix: "取消收藏失败",
+      successCondition: (result) => result ?? false,
+    );
   }
 }

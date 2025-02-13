@@ -283,17 +283,14 @@ class _RecordPageState extends State<RecordPage>
   }
 
   Future<void> _getRecordRecognition(String payload) async {
-    final res = await _recordViewModel.getResponse(payload);
-
-    if (mounted == false) {
-      return;
-    }
-
-    if (res?.result?.isEmpty == true) {
-      CustomHelper.showSnackBar(context, "识别失败，请重新尝试", success: false);
-    } else {
-      RouteHelper.push(
-          context, RecognizationResultPage(rubbishName: res?.result ?? ""));
-    }
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: _recordViewModel.getResponse(payload),
+      successMessage: "识别成功",
+      failurePrefix: "识别失败，请重新尝试",
+      successCondition: (result) => result?.result?.isNotEmpty ?? false,
+      onSuccess: (result) => RouteHelper.push(
+          context, RecognizationResultPage(rubbishName: result?.result ?? "")),
+    );
   }
 }

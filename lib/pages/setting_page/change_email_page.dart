@@ -68,50 +68,36 @@ class _ChangeEmailPageState extends State<ChangeEmailPage> {
   }
 
   void _getVerifyCode() async {
-    if (_emailFieldKey.currentState?.validate() == false) {
-      return;
-    }
+    if (!(_emailFieldKey.currentState?.validate() ?? false)) return;
 
-    try {
-      final message = await Api.instance.getChangeEmailVerifyCode(
-          widget.user.id!, _newEmailController.text.trim());
-
-      if (!mounted) return;
-      if (message == null) {
-        CustomHelper.showSnackBar(context, "验证码发送成功，请检查您的邮箱");
-        _startCountdown();
-      } else {
-        CustomHelper.showSnackBar(context, "获取验证码失败：$message", success: false);
-      }
-    } catch (e) {
-      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
-    }
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: Api.instance.getChangeEmailVerifyCode(
+          widget.user.id!, _newEmailController.text.trim()),
+      successMessage: "验证码发送成功，请检查您的邮箱",
+      failurePrefix: "获取验证码失败：",
+      onSuccess: (_) => _startCountdown(),
+    );
   }
 
   void _handleChangeEmail() async {
-    if (_formKey.currentState?.validate() == false) {
-      return;
-    }
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    try {
-      final message = await Api.instance.changeEmail(
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: Api.instance.changeEmail(
           widget.user.id!,
           _newEmailController.text.trim(),
-          _verificationCodeController.text.trim());
-
-      if (!mounted) return;
-      if (message == null) {
-        CustomHelper.showSnackBar(context, "修改邮箱成功");
+          _verificationCodeController.text.trim()),
+      successMessage: "修改邮箱成功",
+      failurePrefix: "修改邮箱失败",
+      onSuccess: (_) {
         _newEmailController.clear();
         _verificationCodeController.clear();
         _isCodeSentNotifier.value = false;
         _timer?.cancel();
-      } else {
-        CustomHelper.showSnackBar(context, "修改邮箱失败：$message", success: false);
-      }
-    } catch (e) {
-      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
-    }
+      },
+    );
   }
 
   @override

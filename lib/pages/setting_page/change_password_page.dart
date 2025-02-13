@@ -467,38 +467,29 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   }
 
   void _getVerifyCode() async {
-    try {
-      final message =
-          await Api.instance.getChangePasswordVerifyCode(widget.user.id!);
-
-      if (!mounted) return;
-      if (message == null) {
-        CustomHelper.showSnackBar(context, "验证码发送成功，请检查您的邮箱");
-        _startCountdown();
-      } else {
-        CustomHelper.showSnackBar(context, "获取验证码失败：$message", success: false);
-      }
-    } catch (e) {
-      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
-    }
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: Api.instance.getChangePasswordVerifyCode(widget.user.id!),
+      successMessage: "验证码发送成功，请检查您的邮箱",
+      failurePrefix: "获取验证码失败",
+      onSuccess: (_) => _startCountdown(),
+    );
   }
 
   void _handleChangePassword() async {
-    if (_formKey.currentState?.validate() == false) {
-      return;
-    }
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    try {
-      final message = await Api.instance.changePassword(
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: Api.instance.changePassword(
           widget.user.id!,
           _oldPasswordController.text.trim(),
           _newPasswordController.text.trim(),
           _confirmPasswordController.text.trim(),
-          _verificationCodeController.text.trim());
-
-      if (!mounted) return;
-      if (message == null) {
-        CustomHelper.showSnackBar(context, "修改密码成功");
+          _verificationCodeController.text.trim()),
+      successMessage: "修改密码成功",
+      failurePrefix: "修改密码失败",
+      onSuccess: (_) {
         _oldPasswordController.clear();
         _newPasswordController.clear();
         _confirmPasswordController.clear();
@@ -507,11 +498,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         _showPasswordRequirements.value = false;
         _isCodeSentNotifier.value = false;
         _timer?.cancel();
-      } else {
-        CustomHelper.showSnackBar(context, "修改密码失败：$message", success: false);
-      }
-    } catch (e) {
-      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
-    }
+      },
+    );
   }
 }

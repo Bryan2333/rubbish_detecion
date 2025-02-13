@@ -50,31 +50,26 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   }
 
   Future<void> _saveProfile() async {
-    if (_formKey.currentState?.validate() == false) {
-      return;
-    }
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    try {
-      final (user, message) = await Api.instance.changeUserInfo(
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: Api.instance.changeUserInfo(
           widget.user.id!,
           _usernameController.text.trim(),
           int.parse(_ageController.text.trim()),
           _selectedGender.value,
           _signatureController.text.trim(),
           _avatarImage.value != null
-              ? base64Encode(await _avatarImage.value!.readAsBytes())
-              : null);
-
-      if (message == null) {
-        await DbHelper.instance.updateUser(user!);
-        if (!mounted) return;
-        CustomHelper.showSnackBar(context, "用户信息更新成功");
-      } else {
-        CustomHelper.showSnackBar(context, "用户信息更新失败：$message", success: false);
-      }
-    } catch (e) {
-      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
-    }
+              ? base64Encode(_avatarImage.value!.readAsBytesSync())
+              : null),
+      successMessage: "用户信息更新成功",
+      failurePrefix: "用户信息更新失败",
+      onSuccess: (result) async {
+        await DbHelper.instance.updateUser((result?.$1)!);
+      },
+      successCondition: (result) => result?.$2 == null,
+    );
   }
 
   @override

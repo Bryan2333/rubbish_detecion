@@ -70,26 +70,20 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
       return;
     }
 
-    try {
-      final message = await Api.instance.addCollection(
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: Api.instance.addCollection(
         userId,
         _nameController.text.trim(),
         rubbish.type!,
         DateTime.now().toIso8601String(),
-        widget.imagePath?.isNotEmpty == true
+        widget.imagePath?.isNotEmpty ?? false
             ? base64Encode(File(widget.imagePath!).readAsBytesSync())
             : null,
-      );
-
-      if (!mounted) return;
-      if (message == null) {
-        CustomHelper.showSnackBar(context, "添加成功");
-      } else {
-        CustomHelper.showSnackBar(context, "添加失败：$message", success: false);
-      }
-    } catch (e) {
-      CustomHelper.showSnackBar(context, "网络异常，请稍后再试", success: false);
-    }
+      ),
+      successMessage: "添加成功",
+      failurePrefix: "添加失败",
+    );
   }
 
   void _submitName() {
