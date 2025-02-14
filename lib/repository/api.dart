@@ -296,7 +296,7 @@ class Api {
     final collections = collectionJsonList.map((json) {
       final collection =
           RecognitionCollectionBean.fromJson(json as Map<String, dynamic>);
-      if (collection.image?.isNotEmpty == true) {
+      if (collection.image?.isNotEmpty ?? false) {
         collection.image = DioInstance.instance.baseURL + collection.image!;
       }
       return collection;

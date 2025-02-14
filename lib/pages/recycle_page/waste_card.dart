@@ -55,13 +55,12 @@ class _WasteCardState extends State<WasteCard>
       ..addListener(() {
         widget.waste?.name = _nameController.text.trim();
       });
-    _weightController = TextEditingController(
-        text:
-            widget.waste?.weight == null ? "" : widget.waste?.weight.toString())
-      ..addListener(() {
-        widget.waste?.weight = double.tryParse(_weightController.text) ?? 0;
-        widget.onCalEstimatedPrice?.call();
-      });
+    _weightController =
+        TextEditingController(text: widget.waste?.weight?.toString() ?? "")
+          ..addListener(() {
+            widget.waste?.weight = double.tryParse(_weightController.text) ?? 0;
+            widget.onCalEstimatedPrice?.call();
+          });
     _unitNotifier = ValueNotifier(widget.waste?.unit ?? 1)
       ..addListener(() {
         widget.waste?.unit = _unitNotifier.value;

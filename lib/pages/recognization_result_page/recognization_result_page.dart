@@ -87,7 +87,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
   }
 
   void _submitName() {
-    if (_nameFieldKey.currentState?.validate() == true) {
+    if (_nameFieldKey.currentState?.validate() ?? false) {
       _isEditingNotifier.value = false;
       _recognizationViewModel.getRubbishList(_nameController.text);
     }

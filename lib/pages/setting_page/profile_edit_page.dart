@@ -34,7 +34,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     _usernameController = TextEditingController(text: widget.user.username);
     _ageController = TextEditingController(text: widget.user.age.toString());
     _signatureController = TextEditingController(
-        text: widget.user.signature?.isEmpty == true
+        text: widget.user.signature?.isEmpty ?? true
             ? "这个人很懒，什么都没留下"
             : widget.user.signature);
     _avatarImage = ValueNotifier(null);
@@ -185,7 +185,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                 ImageProvider? imageProvider;
                 if (avatarImage != null) {
                   imageProvider = FileImage(avatarImage);
-                } else if (widget.user.avatar?.isNotEmpty == true) {
+                } else if (widget.user.avatar?.isNotEmpty ?? false) {
                   imageProvider =
                       CachedNetworkImageProvider(widget.user.avatar!);
                 }

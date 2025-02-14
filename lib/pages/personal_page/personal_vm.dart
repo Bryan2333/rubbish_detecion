@@ -9,7 +9,7 @@ class PersonalViewModel with ChangeNotifier {
     try {
       final userFromDB = await DbHelper.instance.getUser(userId);
 
-      if (userFromDB?.avatar?.isEmpty == false) {
+      if (userFromDB?.avatar?.isNotEmpty ?? false) {
         userFromDB?.avatar = "http://192.168.1.23:1760${userFromDB.avatar!}";
       }
 

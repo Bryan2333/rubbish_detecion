@@ -127,7 +127,7 @@ class _PersonalPageState extends State<PersonalPage> {
           ),
         ],
       ),
-      child: user?.avatar?.isEmpty == false
+      child: (user?.avatar?.isNotEmpty ?? false)
           ? CachedNetworkImage(
               imageUrl: user!.avatar!,
               imageBuilder: (context, imageProvider) {
@@ -146,7 +146,7 @@ class _PersonalPageState extends State<PersonalPage> {
   // 已登录状态下的用户信息
   Widget _buildLoggedInUserInfo(UserBean? user) {
     final String signature;
-    if (user?.signature?.isEmpty == true) {
+    if (user?.signature?.isEmpty ?? true) {
       signature = "这个人很懒，什么都没留下";
     } else {
       signature = user!.signature!;
