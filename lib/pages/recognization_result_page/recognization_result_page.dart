@@ -188,6 +188,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
                 children: [
                   // 图片区域
                   if (widget.imagePath != null) _buildImageField(),
+                  if (widget.imagePath == null) SizedBox(height: 20.h),
                   // 名称编辑区域
                   _buildNameField(),
                   // 分类图标
@@ -322,7 +323,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.check_circle, color: Color(0xFF00CE68)),
+            icon: const Icon(Icons.check_outlined, color: Color(0xFF00CE68)),
             onPressed: _submitName,
           ),
         ],
