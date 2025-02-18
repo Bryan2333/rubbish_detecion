@@ -5,7 +5,7 @@ import 'package:oktoast/oktoast.dart';
 import 'package:provider/provider.dart';
 import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/recycle_page/recycle_vm.dart';
-import 'package:rubbish_detection/route.dart';
+import 'package:rubbish_detection/common/route.dart';
 
 /// 设计尺寸
 Size get designSize {

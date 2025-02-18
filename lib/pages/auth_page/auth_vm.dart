@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rubbish_detection/constants.dart';
+import 'package:rubbish_detection/common/constants.dart';
 import 'package:rubbish_detection/repository/api.dart';
 import 'package:rubbish_detection/utils/db_helper.dart';
 import 'package:rubbish_detection/utils/sp_helper.dart';
