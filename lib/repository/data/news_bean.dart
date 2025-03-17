@@ -4,7 +4,7 @@ class NewsBean {
   String? imageUrl;
   String? title;
   String? author;
-  String? createdTime;
+  String? publishTime;
 
   NewsBean(
       {this.id,
@@ -12,7 +12,7 @@ class NewsBean {
       this.imageUrl,
       this.title,
       this.author,
-      this.createdTime});
+      this.publishTime});
 
   NewsBean.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -20,7 +20,7 @@ class NewsBean {
     imageUrl = json['imageUrl'];
     title = json['title'];
     author = json['author'];
-    createdTime = json['createdTime'];
+    publishTime = json['publishTime'];
   }
 
   Map<String, dynamic> toJson() {
@@ -30,7 +30,7 @@ class NewsBean {
     data['imageUrl'] = imageUrl;
     data['title'] = title;
     data['author'] = author;
-    data['createdTime'] = createdTime;
+    data['publishTime'] = publishTime;
     return data;
   }
 }

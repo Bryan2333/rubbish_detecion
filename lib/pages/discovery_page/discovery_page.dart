@@ -218,7 +218,7 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
 
   Widget _buildNewsCard(NewsBean news) {
     final createdTime =
-        _dateFormatter.format(_dateFormatter.parse(news.createdTime ?? ""));
+        _dateFormatter.format(_dateFormatter.parse(news.publishTime ?? ""));
 
     return Container(
       margin: EdgeInsets.only(bottom: 16.h, left: 16.w, right: 16.w),
