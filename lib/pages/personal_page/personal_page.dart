@@ -384,9 +384,11 @@ class _PersonalPageState extends State<PersonalPage> {
   }
 
   Future<void> _handleLogout() async {
+    final role = _personalViewModel.user?.role ?? "0"; 
+
     await CustomHelper.executeAsyncCall(
       context: context,
-      futureCall: Provider.of<AuthViewModel>(context, listen: false).logout(),
+      futureCall: Provider.of<AuthViewModel>(context, listen: false).logout(role),
       onSuccess: (_) => RouteHelper.pushAndRemoveUntil(
           context, const TabPage(), (_) => false),
       successCondition: (result) => result == 1000,

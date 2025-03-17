@@ -30,8 +30,8 @@ class AuthViewModel with ChangeNotifier {
     return message;
   }
 
-  Future<int?> logout() async {
-    final statusCode = await Api.instance.logout();
+  Future<int?> logout(String role) async {
+    final statusCode = await Api.instance.logout(role);
 
     if (statusCode == 1000) {
       final userId = await SpUtils.getInt(Constants.spUserId) ?? -1;

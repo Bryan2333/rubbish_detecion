@@ -25,8 +25,8 @@ class _LoginPageState extends State<LoginPage> {
   late ValueNotifier<String> _selectedRoleNotifier;
 
   final roleList = [
-    {'value': 'user', 'label': '普通用户'},
-    {'value': 'recycler', 'label': '回收员'},
+    {'value': '0', 'label': '普通用户'},
+    {'value': '1', 'label': '回收员'},
   ];
 
   @override
@@ -37,7 +37,7 @@ class _LoginPageState extends State<LoginPage> {
     _passwordController = TextEditingController();
 
     _isPasswordVisibleNotifier = ValueNotifier<bool>(false);
-    _selectedRoleNotifier = ValueNotifier("user");
+    _selectedRoleNotifier = ValueNotifier("0");
   }
 
   @override

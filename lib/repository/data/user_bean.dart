@@ -8,6 +8,7 @@ class UserBean {
   String? avatar;
   int? participationCount;
   double? totalRecycleAmount;
+  String? role;
 
   UserBean(
       {this.id,
@@ -18,7 +19,8 @@ class UserBean {
       this.signature,
       this.avatar,
       this.participationCount,
-      this.totalRecycleAmount});
+      this.totalRecycleAmount,
+      this.role});
 
   UserBean.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -30,6 +32,7 @@ class UserBean {
     avatar = json['avatar'];
     participationCount = json['participationCount'];
     totalRecycleAmount = json['totalRecycleAmount'];
+    role = json['role'];
   }
 
   Map<String, dynamic> toJson() {
@@ -43,6 +46,7 @@ class UserBean {
     data['avatar'] = avatar;
     data['participationCount'] = participationCount;
     data['totalRecycleAmount'] = totalRecycleAmount;
+    data['role'] = role;
     return data;
   }
 }

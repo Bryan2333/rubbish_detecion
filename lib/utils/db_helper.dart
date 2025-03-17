@@ -31,7 +31,8 @@ class DbHelper {
         signature TEXT,
         avatar TEXT,
         participationCount INTEGER DEFAULT 0,
-        totalRecycleAmount REAL DEFAULT 0.0
+        totalRecycleAmount REAL DEFAULT 0.0,
+        role TEXT
       )
     ''');
   }

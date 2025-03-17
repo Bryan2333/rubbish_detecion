@@ -39,8 +39,9 @@ class Api {
     return (null, response.statusMessage);
   }
 
-  Future<int?> logout() async {
-    final response = await DioInstance.instance.post("/api/logout");
+  Future<int?> logout(String role) async {
+    final response = await DioInstance.instance
+        .post("/api/logout", queryParameters: {"role": role});
 
     return response.statusCode;
   }
