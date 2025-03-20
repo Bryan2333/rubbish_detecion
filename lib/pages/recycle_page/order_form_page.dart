@@ -236,9 +236,11 @@ class _OrderFormPageState extends State<OrderFormPage> {
 
     _order.orderStatus = 0;
     _order.orderDate = DateTime.now().toIso8601String();
-    _order.waste?.photos = _localPhotoPaths
-        .map((photo) => base64Encode(File(photo).readAsBytesSync()))
-        .toList();
+    for (final bean in _localPhotoPaths) {
+      bean.imagePath =
+          "data:image/jpeg;base64,${base64Encode(File(bean.imagePath!).readAsBytesSync())}";
+    }
+    _order.waste?.photos = _localPhotoPaths;
     _order.userId =
         await Provider.of<AuthViewModel>(context, listen: false).getUserId();
 

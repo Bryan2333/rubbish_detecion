@@ -411,10 +411,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _imageRecognition() async {
-    final imageSource = await ImageHelper.showPickerDialog(context);
-    if (imageSource == null) return;
-
-    final image = await ImageHelper.pickImage(source: imageSource);
+    final image = await ImageHelper.uploadImage(context);
     if (image == null) return;
 
     final rubbish = await _predict(image);

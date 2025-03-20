@@ -1,11 +1,30 @@
 import 'dart:io';
-
+import 'package:path/path.dart' as p;
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 
 class ImageHelper {
-  static Future<ImageSource?> showPickerDialog(BuildContext context) async {
+  static Future<File?> uploadImage(BuildContext context,
+      {double? maxWidth, double? maxHeight, int? imageQuality}) async {
+    final imageSource = await _showPickerDialog(context);
+    if (imageSource == null) {
+      return null;
+    }
+
+    if (!context.mounted) return null;
+
+    final pickedImage = await _pickImage(context,
+        source: imageSource,
+        maxWidth: maxWidth,
+        maxHeight: maxHeight,
+        imageQuality: imageQuality);
+
+    return pickedImage;
+  }
+
+  static Future<ImageSource?> _showPickerDialog(BuildContext context) async {
     ImageSource? source;
     await showDialog(
       context: context,
@@ -40,7 +59,7 @@ class ImageHelper {
     return source;
   }
 
-  static Future<File?> pickImage(
+  static Future<File?> _pickImage(BuildContext context,
       {required ImageSource source,
       double? maxWidth,
       double? maxHeight,
@@ -55,7 +74,14 @@ class ImageHelper {
       return null;
     }
 
-    final croppedImage = await cropImage(returnImage);
+    final extension = p.extension(returnImage.path).toLowerCase();
+    if (extension != ".jpeg" && extension != ".jpg") {
+      if (!context.mounted) return null;
+      CustomHelper.showSnackBar(context, "只支持上传jpg和jpeg格式的图片", success: false);
+      return null;
+    }
+
+    final croppedImage = await _cropImage(returnImage);
     if (croppedImage == null) {
       return null;
     }
@@ -63,7 +89,7 @@ class ImageHelper {
     return File(croppedImage.path);
   }
 
-  static Future<CroppedFile?> cropImage(XFile image) async {
+  static Future<CroppedFile?> _cropImage(XFile image) async {
     final croppedImage = await ImageCropper().cropImage(
       sourcePath: image.path,
       uiSettings: [

@@ -161,17 +161,8 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     return Center(
       child: GestureDetector(
         onTap: () async {
-          final imageSource = await ImageHelper.showPickerDialog(context);
-
-          if (imageSource == null) {
-            return;
-          }
-
-          final image = await ImageHelper.pickImage(
-            source: imageSource,
-            maxWidth: 512.r,
-            maxHeight: 512.r,
-          );
+          final image = await ImageHelper.uploadImage(context,
+              maxWidth: 512.r, maxHeight: 512.r);
 
           if (image != null) {
             _avatarImage.value = image;
