@@ -11,6 +11,7 @@ import 'package:rubbish_detection/pages/recycle_page/waste_card.dart';
 import 'package:rubbish_detection/repository/data/order_address_bean.dart';
 import 'package:rubbish_detection/repository/data/order_bean.dart';
 import 'package:rubbish_detection/repository/data/order_waste_bean.dart';
+import 'package:rubbish_detection/repository/data/order_waste_photo_bean.dart';
 import 'package:rubbish_detection/utils/custom_helper.dart';
 import 'package:rubbish_detection/utils/route_helper.dart';
 
@@ -28,7 +29,7 @@ class _OrderFormPageState extends State<OrderFormPage> {
   final _wasteFormKey = GlobalKey<FormState>();
   final _addressFormKey = GlobalKey<FormState>();
 
-  final _localPhotoPaths = <String>[];
+  final _localPhotoPaths = <OrderWastePhotoBean>[];
 
   late ValueNotifier<double> _totalPrice;
 

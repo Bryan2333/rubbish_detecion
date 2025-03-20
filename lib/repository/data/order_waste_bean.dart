@@ -1,3 +1,5 @@
+import 'package:rubbish_detection/repository/data/order_waste_photo_bean.dart';
+
 class OrderWasteBean {
   int? id;
   int? type;
@@ -5,7 +7,7 @@ class OrderWasteBean {
   double? weight;
   int? unit;
   String? description;
-  List<String>? photos;
+  List<OrderWastePhotoBean>? photos;
   String? createdAt;
   String? updatedAt;
 
@@ -27,9 +29,14 @@ class OrderWasteBean {
     weight = json['weight'];
     unit = json['unit'];
     description = json['description'];
-    photos = json['photos'].cast<String>();
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
+    if (json['photos'] != null) {
+      photos = <OrderWastePhotoBean>[];
+      json['photos'].forEach((v) {
+        photos!.add(OrderWastePhotoBean.fromJson(v));
+      });
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -40,9 +47,11 @@ class OrderWasteBean {
     data['weight'] = weight;
     data['unit'] = unit;
     data['description'] = description;
-    data['photos'] = photos;
     data['created_at'] = createdAt;
     data['updated_at'] = updatedAt;
+    if (photos != null) {
+      data['photos'] = photos!.map((v) => v.toJson()).toList();
+    }
     return data;
   }
 }

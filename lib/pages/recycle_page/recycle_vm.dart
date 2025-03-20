@@ -134,10 +134,12 @@ class RecycleViewModel with ChangeNotifier {
 
   void _fixOrderData(OrderBean order) {
     final dateFormatter = DateFormat("yyyy年MM月dd日 HH:mm");
-    order.waste?.photos = order.waste?.photos
-        ?.map((photo) =>
-            photo.isEmpty ? "" : DioInstance.instance.baseURL + photo)
-        .toList();
+    order.waste?.photos = order.waste?.photos?.map((photo) {
+      if (photo.imagePath?.isNotEmpty ?? false) {
+        photo.imagePath = "${DioInstance.instance.baseURL}${photo.imagePath}";
+      }
+      return photo;
+    }).toList();
     order.orderDate =
         dateFormatter.format(DateTime.parse(order.orderDate ?? ""));
   }

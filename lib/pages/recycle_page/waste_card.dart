@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rubbish_detection/repository/data/order_waste_bean.dart';
+import 'package:rubbish_detection/repository/data/order_waste_photo_bean.dart';
 import 'package:rubbish_detection/utils/custom_helper.dart';
 import 'package:rubbish_detection/utils/image_helper.dart';
 
@@ -11,7 +12,7 @@ class WasteCard extends StatefulWidget {
   final VoidCallback? onCalEstimatedPrice;
   final bool isReadOnly;
   final GlobalKey<FormState>? formKey;
-  final List<String>? localPhotoPaths;
+  final List<OrderWastePhotoBean>? localPhotoPaths;
 
   const WasteCard({
     super.key,
@@ -102,7 +103,7 @@ class _WasteCardState extends State<WasteCard>
     return null;
   }
 
-  String? _validatePhotos(List<String>? value) {
+  String? _validatePhotos(List<OrderWastePhotoBean>? value) {
     if (value?.isEmpty ?? true) {
       return "请上传至少一张图片";
     }
@@ -398,7 +399,8 @@ class _WasteCardState extends State<WasteCard>
 
                   if (image == null) return;
 
-                  setState(() => photosToDisplay.add(image.path));
+                  setState(() => photosToDisplay
+                      .add(OrderWastePhotoBean(imagePath: image.path)));
                 },
                 child: Container(
                   width: 60.w,
@@ -416,7 +418,7 @@ class _WasteCardState extends State<WasteCard>
     );
   }
 
-  Widget _buildImageWidget(String path) {
+  Widget _buildImageWidget(OrderWastePhotoBean bean) {
     final double imageSize = 60.r;
     final double borderRadius = 10.r;
 
@@ -429,6 +431,7 @@ class _WasteCardState extends State<WasteCard>
     }
 
     Widget imageWidget;
+    final path = bean.imagePath ?? "";
     if (Uri.tryParse(path)?.hasScheme ?? false) {
       imageWidget = CachedNetworkImage(
         imageUrl: path,
