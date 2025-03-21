@@ -46,6 +46,11 @@ class _FeedbackPageState extends State<FeedbackPage> {
       successMessage: "提交成功，感谢您的反馈",
       failurePrefix: "提交失败，请稍后再试",
       successCondition: (result) => result == 1000,
+      onSuccess: (result) {
+        _nameController.clear();
+        _emailController.clear();
+        _feedbackController.clear();
+      },
     );
   }
 
