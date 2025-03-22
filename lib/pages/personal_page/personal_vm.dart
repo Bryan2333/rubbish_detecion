@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rubbish_detection/http/dio_instance.dart';
 import 'package:rubbish_detection/repository/data/user_bean.dart';
 import 'package:rubbish_detection/utils/db_helper.dart';
 
@@ -10,7 +11,7 @@ class PersonalViewModel with ChangeNotifier {
       final userFromDB = await DbHelper.instance.getUser(userId);
 
       if (userFromDB?.avatar?.isNotEmpty ?? false) {
-        userFromDB?.avatar = "http://192.168.1.23:1760${userFromDB.avatar!}";
+        userFromDB?.avatar = "${DioInstance.instance.baseURL}${userFromDB.avatar!}";
       }
 
       user = userFromDB;
