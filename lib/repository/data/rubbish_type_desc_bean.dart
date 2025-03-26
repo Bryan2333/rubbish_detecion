@@ -3,9 +3,9 @@ class RubbishTypeDescBean {
   int? type;
   String? name;
   String? description;
-  List<String>? disposalAdvice;
-  List<String>? handleMethods;
-  List<String>? commonThings;
+  dynamic disposalAdvice;
+  dynamic handleMethods;
+  dynamic commonThings;
 
   RubbishTypeDescBean(
       {this.id,
@@ -21,9 +21,9 @@ class RubbishTypeDescBean {
     type = json['type'];
     name = json['name'];
     description = json['description'];
-    disposalAdvice = json['disposalAdvice'].cast<String>();
-    handleMethods = json['handleMethods'].cast<String>();
-    commonThings = json['commonThings'].cast<String>();
+    disposalAdvice = json['disposalAdvice'];
+    handleMethods = json['handleMethods'];
+    commonThings = json['commonThings'];
   }
 
   Map<String, dynamic> toJson() {

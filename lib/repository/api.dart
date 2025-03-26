@@ -235,7 +235,24 @@ class Api {
     );
 
     if (response.statusCode == 1000) {
-      return RubbishTypeDescBean.fromJson(response.data);
+      final desc = RubbishTypeDescBean.fromJson(response.data);
+
+      desc.commonThings = desc.commonThings
+          ?.map((item) => item["thing"])
+          .toList()
+          .cast<String>();
+
+      desc.disposalAdvice = desc.disposalAdvice
+          ?.map((item) => item["advice"])
+          .toList()
+          .cast<String>();
+
+      desc.handleMethods = desc.handleMethods
+          ?.map((item) => item["method"])
+          .toList()
+          .cast<String>();
+
+      return desc;
     }
 
     return null;
