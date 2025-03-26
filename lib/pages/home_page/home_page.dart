@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_swiper_view/flutter_swiper_view.dart';
 import 'package:provider/provider.dart';
 import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/collection_page/collection_page.dart';
@@ -39,8 +38,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-
-    _homeViewModel.getBannerData();
 
     _hasTextNotifier = ValueNotifier(false);
 
@@ -149,43 +146,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildBanner() {
-    return Consumer<HomeViewModel>(
-      builder: (context, vm, child) {
-        return Container(
-          margin: EdgeInsets.only(left: 16.w, right: 16.w),
-          height: 160.h,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16.r),
-            child: Swiper(
-              itemCount: vm.bannerList.length,
-              autoplay: true,
-              controller: SwiperController(),
-              pagination: SwiperPagination(
-                margin: EdgeInsets.only(bottom: 12.h),
-                builder: DotSwiperPaginationBuilder(
-                  activeColor: const Color(0xFF00CE68),
-                  color: Colors.white.withValues(alpha: 0.8),
-                  size: 8.r,
-                  activeSize: 8.r,
-                ),
-              ),
-              itemBuilder: (context, index) {
-                return Image.network(
-                  vm.bannerList[index].imagePath ?? "",
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Center(
-                    child: Icon(
-                      Icons.broken_image_outlined,
-                      size: 50.r,
-                      color: Colors.grey,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        );
-      },
+    return Container(
+      margin: EdgeInsets.only(left: 16.w, right: 16.w),
+      height: 160.h,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16.r),
+        child: Image.asset(
+          "assets/images/banner.png",
+          fit: BoxFit.cover,
+        ),
+      ),
     );
   }
 

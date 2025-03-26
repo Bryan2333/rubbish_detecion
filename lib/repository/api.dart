@@ -1,5 +1,4 @@
 import 'package:rubbish_detection/http/dio_instance.dart';
-import 'package:rubbish_detection/repository/data/banner_bean.dart';
 import 'package:rubbish_detection/repository/data/order_bean.dart';
 import 'package:rubbish_detection/repository/data/quiz_bean.dart';
 import 'package:rubbish_detection/repository/data/recognition_collection_bean.dart';
@@ -194,22 +193,6 @@ class Api {
     }
 
     return (null, response.statusMessage);
-  }
-
-  Future<List<BannerBean>?> getBannerList() async {
-    final response = await DioInstance.instance.get("/api/banner/getBanner");
-
-    if (response.data is! List) {
-      return null;
-    }
-
-    final bannerJsonList = response.data as List;
-
-    final banners = bannerJsonList
-        .map((json) => BannerBean.fromJson(json as Map<String, dynamic>))
-        .toList();
-
-    return banners;
   }
 
   Future<List<QuizBean>?> getQuizList() async {
