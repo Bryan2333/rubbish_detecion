@@ -15,7 +15,7 @@ class Api {
     return _instance!;
   }
 
-  Future<(UserBean?, String?)> login(
+  Future<(int?, String?, UserBean?)> login(
     String username,
     String password,
     String role,
@@ -29,23 +29,21 @@ class Api {
       },
     );
 
-    if (response.statusCode == 1000) {
-      final user = UserBean.fromJson(response.data);
-
-      return (user, null);
-    }
-
-    return (null, response.statusMessage);
+    return (
+      response.statusCode,
+      response.statusMessage,
+      response.statusCode == 1000 ? UserBean.fromJson(response.data) : null
+    );
   }
 
-  Future<int?> logout(String role) async {
+  Future<(int?, String?, Object?)> logout(String role) async {
     final response = await DioInstance.instance
         .post("/api/logout", queryParameters: {"role": role});
 
-    return response.statusCode;
+    return (response.statusCode, response.statusMessage, response.data);
   }
 
-  Future<String?> register(
+  Future<(int?, String?, Object?)> register(
     String username,
     String password,
     String email,
@@ -69,10 +67,10 @@ class Api {
       },
     );
 
-    return response.statusCode == 1000 ? null : response.statusMessage;
+    return (response.statusCode, response.statusMessage, response.data);
   }
 
-  Future<String?> resetPassword(
+  Future<(int?, String?, Object?)> resetPassword(
     String username,
     String email,
     String newPassword,
@@ -90,45 +88,47 @@ class Api {
       },
     );
 
-    return response.statusCode == 1000 ? null : response.statusMessage;
+    return (response.statusCode, response.statusMessage, response.data);
   }
 
-  Future<String?> getRegisterVerifyCode(String email) async {
+  Future<(int?, String?, Object?)> getRegisterVerifyCode(String email) async {
     final response = await DioInstance.instance
         .post("/api/captcha/register", data: {"email": email});
 
-    return response.statusCode == 1000 ? null : response.statusMessage;
+    return (response.statusCode, response.statusMessage, response.data);
   }
 
-  Future<String?> getResetPasswordVerifyCode(
+  Future<(int?, String?, Object?)> getResetPasswordVerifyCode(
       String username, String email) async {
     final response = await DioInstance.instance.post(
       "/api/captcha/resetPassword",
       data: {"username": username, "email": email},
     );
 
-    return response.statusCode == 1000 ? null : response.statusMessage;
+    return (response.statusCode, response.statusMessage, response.data);
   }
 
-  Future<String?> getChangeEmailVerifyCode(int userId, String newEmail) async {
+  Future<(int?, String?, Object?)> getChangeEmailVerifyCode(
+      int userId, String newEmail) async {
     final response = await DioInstance.instance.post(
       "/api/captcha/changeEmail",
       data: {"userId": userId, "newEmail": newEmail},
     );
 
-    return response.statusCode == 1000 ? null : response.statusMessage;
+    return (response.statusCode, response.statusMessage, response.data);
   }
 
-  Future<String?> getChangePasswordVerifyCode(int userId) async {
+  Future<(int?, String?, Object?)> getChangePasswordVerifyCode(
+      int userId) async {
     final response = await DioInstance.instance.post(
       "/api/captcha/changePassword",
       data: {"userId": userId},
     );
 
-    return response.statusCode == 1000 ? null : response.statusMessage;
+    return (response.statusCode, response.statusMessage, response.data);
   }
 
-  Future<String?> changeEmail(
+  Future<(int?, String?, Object?)> changeEmail(
     int userId,
     String newEmail,
     String verifyCode,
@@ -142,10 +142,10 @@ class Api {
       },
     );
 
-    return response.statusCode == 1000 ? null : response.statusMessage;
+    return (response.statusCode, response.statusMessage, response.data);
   }
 
-  Future<String?> changePassword(
+  Future<(int?, String?, Object?)> changePassword(
     int userId,
     String oldPassword,
     String newPassword,
@@ -163,10 +163,10 @@ class Api {
       },
     );
 
-    return response.statusCode == 1000 ? null : response.statusMessage;
+    return (response.statusCode, response.statusMessage, response.data);
   }
 
-  Future<(UserBean?, String?)> changeUserInfo(
+  Future<(int?, String?, UserBean?)> changeUserInfo(
     int userId,
     String username,
     int age,
@@ -186,16 +186,14 @@ class Api {
       },
     );
 
-    if (response.statusCode == 1000) {
-      final user = UserBean.fromJson(response.data);
-
-      return (user, null);
-    }
-
-    return (null, response.statusMessage);
+    return (
+      response.statusCode,
+      response.statusMessage,
+      response.statusCode == 1000 ? UserBean.fromJson(response.data) : null
+    );
   }
 
-  Future<List<QuizBean>?> getQuizList() async {
+  Future<(int?, String?, List<QuizBean>?)?> getQuizList() async {
     final response = await DioInstance.instance.get("/api/quiz/random");
 
     if (response.data is! List) {
@@ -208,10 +206,11 @@ class Api {
         .map((json) => QuizBean.fromJson(json as Map<String, dynamic>))
         .toList();
 
-    return quizzes;
+    return (response.statusCode, response.statusMessage, quizzes);
   }
 
-  Future<RubbishTypeDescBean?> getRubbishTypeDesc(int rubbishType) async {
+  Future<(int?, String?, RubbishTypeDescBean?)?> getRubbishTypeDesc(
+      int rubbishType) async {
     final response = await DioInstance.instance.get(
       "/api/rubbish-type/getDesc",
       params: {"type": rubbishType},
@@ -235,13 +234,14 @@ class Api {
           .toList()
           .cast<String>();
 
-      return desc;
+      return (response.statusCode, response.statusMessage, desc);
     }
 
     return null;
   }
 
-  Future<int?> sendFeedback(String name, String email, String content) async {
+  Future<(int?, String?, Object?)> sendFeedback(
+      String name, String email, String content) async {
     final response = await DioInstance.instance.post(
       "/api/feedback/add",
       data: {
@@ -251,10 +251,10 @@ class Api {
       },
     );
 
-    return response.statusCode;
+    return (response.statusCode, response.statusMessage, response.data);
   }
 
-  Future<String?> addCollection(
+  Future<(int?, String?, Object?)> addCollection(
     int userId,
     String rubbishName,
     int rubbishType,
@@ -272,10 +272,11 @@ class Api {
       },
     );
 
-    return response.statusCode == 1000 ? null : response.statusMessage;
+    return (response.statusCode, response.statusMessage, response.data);
   }
 
-  Future<List<RecognitionCollectionBean>?> getCollectionByPage(
+  Future<(int?, String?, List<RecognitionCollectionBean>?)?>
+      getCollectionByPage(
     int userId, [
     int pageNum = 1,
     int pageSize = 5,
@@ -303,10 +304,11 @@ class Api {
       return collection;
     }).toList();
 
-    return collections;
+    return (response.statusCode, response.statusMessage, collections);
   }
 
-  Future<int?> unCollectRecognition(int collectionId, int userId) async {
+  Future<(int?, String?, Object?)> unCollectRecognition(
+      int collectionId, int userId) async {
     final response = await DioInstance.instance.post(
       "/api/collection/unCollect",
       queryParameters: {
@@ -315,24 +317,23 @@ class Api {
       },
     );
 
-    return response.statusCode;
+    return (response.statusCode, response.statusMessage, response.data);
   }
 
-  Future<(OrderBean?, String?)> addOrder(OrderBean order) async {
+  Future<(int?, String?, OrderBean?)> addOrder(OrderBean order) async {
     final response = await DioInstance.instance.post(
       "/api/order/add",
       data: order.toJson(),
     );
 
-    if (response.statusCode == 1000) {
-      final order = OrderBean.fromJson(response.data);
-      return (order, null);
-    }
-
-    return (null, response.statusMessage);
+    return (
+      response.statusCode,
+      response.statusMessage,
+      response.statusCode == 1000 ? OrderBean.fromJson(response.data) : null
+    );
   }
 
-  Future<List<OrderBean>?> getRecentOrder(int userId) async {
+  Future<(int?, String?, List<OrderBean>?)?> getRecentOrder(int userId) async {
     final response = await DioInstance.instance.get(
       "/api/order/getRecent?userId=$userId",
     );
@@ -346,10 +347,10 @@ class Api {
         .map((json) => OrderBean.fromJson(json as Map<String, dynamic>))
         .toList();
 
-    return orders;
+    return (response.statusCode, response.statusMessage, orders);
   }
 
-  Future<List<OrderBean>?> getOrderByPage(
+  Future<(int?, String?, List<OrderBean>?)?> getOrderByPage(
     int userId, {
     int? orderStatus,
     int pageNum = 1,
@@ -374,6 +375,6 @@ class Api {
         .map((json) => OrderBean.fromJson(json as Map<String, dynamic>))
         .toList();
 
-    return orders;
+    return (response.statusCode, response.statusMessage, orders);
   }
 }

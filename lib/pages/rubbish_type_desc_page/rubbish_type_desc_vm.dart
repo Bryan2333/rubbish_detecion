@@ -8,9 +8,9 @@ class RubbishTypeDescViewModel with ChangeNotifier {
 
   Future<void> getDesc(int type) async {
     try {
-      final data = await Api.instance.getRubbishTypeDesc(type);
+      final response = await Api.instance.getRubbishTypeDesc(type);
 
-      desc = data;
+      desc = response!.$3!;
     } catch (e) {
       log("Error fetching rubbish type description: $e");
     } finally {

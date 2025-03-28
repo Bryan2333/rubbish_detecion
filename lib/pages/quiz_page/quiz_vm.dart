@@ -14,9 +14,9 @@ class QuizViewModel with ChangeNotifier {
     try {
       quizList.clear();
 
-      final quizzes = await Api.instance.getQuizList();
+      final response = await Api.instance.getQuizList();
 
-      quizList.addAll(quizzes ?? []);
+      quizList.addAll(response?.$3 ?? []);
     } catch (e) {
       log("Error fetching quiz: $e");
     } finally {

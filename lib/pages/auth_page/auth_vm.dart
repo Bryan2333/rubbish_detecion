@@ -15,11 +15,12 @@ class AuthViewModel with ChangeNotifier {
     return userId != null && userId > 0;
   }
 
-  Future<String?> login(
+  Future<(int?, String?, UserBean?)> login(
       {required String username,
       required password,
       required String role}) async {
-    final (user, message) = await Api.instance.login(username, password, role);
+    final (statusCode, statusMsg, user) =
+        await Api.instance.login(username, password, role);
 
     if (user != null) {
       await SpUtils.saveInt(Constants.spUserId, user.id ?? -1);
@@ -27,11 +28,11 @@ class AuthViewModel with ChangeNotifier {
       await DbHelper.instance.insertUser(user);
     }
 
-    return message;
+    return (statusCode, statusMsg, user);
   }
 
-  Future<int?> logout(String role) async {
-    final statusCode = await Api.instance.logout(role);
+  Future<(int?, String?, Object?)> logout(String role) async {
+    final (statusCode, statusMsg, _) = await Api.instance.logout(role);
 
     if (statusCode == 1000) {
       final userId = await SpUtils.getInt(Constants.spUserId) ?? -1;
@@ -39,6 +40,6 @@ class AuthViewModel with ChangeNotifier {
       await SpUtils.remove(Constants.spUserId);
     }
 
-    return statusCode;
+    return (statusCode, statusMsg, null);
   }
 }

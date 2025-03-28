@@ -8,6 +8,7 @@ import 'package:record/record.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rubbish_detection/pages/recognization_result_page/recognization_result_page.dart';
 import 'package:rubbish_detection/pages/record_page/record_vm.dart';
+import 'package:rubbish_detection/repository/data/record_response_data.dart';
 import 'package:rubbish_detection/utils/custom_helper.dart';
 import 'package:rubbish_detection/utils/route_helper.dart';
 
@@ -283,14 +284,16 @@ class _RecordPageState extends State<RecordPage>
   }
 
   Future<void> _getRecordRecognition(String payload) async {
-    await CustomHelper.executeAsyncCall(
+    await CustomHelper.executeAsyncCall<RecordResponse?>(
       context: context,
       futureCall: _recordViewModel.getResponse(payload),
       successMessage: "识别成功",
       failurePrefix: "识别失败，请重新尝试",
-      successCondition: (result) => result?.result?.isNotEmpty ?? false,
+      successCondition: (result) => result?.$3?.result?.isNotEmpty ?? false,
       onSuccess: (result) => RouteHelper.push(
-          context, RecognizationResultPage(rubbishName: result?.result ?? "")),
+          context,
+          RecognizationResultPage(
+              rubbishName: (result?.$3 as RecordResponse).result ?? "")),
     );
   }
 }

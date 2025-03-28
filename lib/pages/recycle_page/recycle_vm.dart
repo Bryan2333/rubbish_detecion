@@ -31,12 +31,12 @@ class RecycleViewModel with ChangeNotifier {
     return orderStatus;
   }
 
-  Future<(OrderBean?, String?)> createOrder(OrderBean order) async {
-    final (orderFromRes, message) = await Api.instance.addOrder(order);
+  Future<(int?, String?, OrderBean?)> createOrder(OrderBean order) async {
+    final result = await Api.instance.addOrder(order);
 
-    _fixOrderData(orderFromRes!);
+    _fixOrderData(result.$3!);
 
-    return (orderFromRes, message);
+    return result;
   }
 
   /// 获取指定状态的订单列表，支持分页加载
@@ -71,14 +71,14 @@ class RecycleViewModel with ChangeNotifier {
       isLoading = true;
       notifyListeners();
 
-      List<OrderBean>? fetchedOrders;
-
-      fetchedOrders = await Api.instance.getOrderByPage(
+      final response = await Api.instance.getOrderByPage(
         userId,
         orderStatus: orderStatus,
         pageNum: pageNum,
         pageSize: pageSize,
       );
+
+      List<OrderBean>? fetchedOrders = response?.$3;
       fetchedOrders ??= [];
 
       fetchedOrders.forEach(_fixOrderData);
@@ -112,7 +112,8 @@ class RecycleViewModel with ChangeNotifier {
       isLoading = true;
       notifyListeners();
 
-      final fetchedOrders = await Api.instance.getRecentOrder(userId) ?? [];
+      final response = await Api.instance.getRecentOrder(userId);
+      final fetchedOrders = response?.$3 ?? [];
       fetchedOrders.forEach(_fixOrderData);
 
       _ordersCache[key] = fetchedOrders;

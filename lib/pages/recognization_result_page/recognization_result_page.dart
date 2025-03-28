@@ -82,7 +82,6 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
             : null,
       ),
       successMessage: "添加成功",
-      failurePrefix: "添加失败",
     );
   }
 

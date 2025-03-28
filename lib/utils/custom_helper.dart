@@ -36,25 +36,26 @@ class CustomHelper {
   /// - [successCondition] 成功条件（默认为 null，即返回 null 为成功）
   static Future<void> executeAsyncCall<T>(
       {required BuildContext context,
-      required Future<T?> futureCall,
-      void Function(T? result)? onSuccess,
-      String successMessage = '操作成功',
-      String failurePrefix = '操作失败',
-      bool Function(T?)? successCondition}) async {
+      required Future<(int?, String?, T?)?> futureCall,
+      void Function((int?, String?, T?)? result)? onSuccess,
+      String successMessage = '',
+      String failurePrefix = '',
+      bool Function((int?, String?, T?)?)? successCondition}) async {
     try {
-      final T? result = await futureCall;
+      final (int?, String?, T?)? result = await futureCall;
       if (!context.mounted) return;
 
       // 如果 successCondition 不为 null，则使用 successCondition 判断是否成功，否则，返回 null 为成功
-      final bool isSuccess =
-          successCondition != null ? successCondition(result) : result == null;
+      final bool isSuccess = successCondition != null
+          ? successCondition(result)
+          : result?.$1 == 1000;
 
       if (isSuccess) {
         showSnackBar(context, successMessage, success: true);
         onSuccess?.call(result);
       } else {
         // 如果后端返回具体的错误消息，则显示错误消息，否则，只显示 failurePrefix
-        final errorMessage = result is String ? result : null;
+        final errorMessage = result?.$2;
         showSnackBar(context,
             "$failurePrefix${errorMessage == null ? "" : ": $errorMessage"}",
             success: false);

@@ -246,17 +246,16 @@ class _OrderFormPageState extends State<OrderFormPage> {
         await Provider.of<AuthViewModel>(context, listen: false).getUserId();
 
     if (!mounted) return;
-    await CustomHelper.executeAsyncCall(
+    await CustomHelper.executeAsyncCall<OrderBean?>(
       context: context,
       futureCall: Provider.of<RecycleViewModel>(context, listen: false)
           .createOrder(_order),
       successMessage: "订单创建成功",
       onSuccess: (result) {
         RouteHelper.pushReplacement(
-            context, OrderStatusPage(order: (result?.$1)!));
+            context, OrderStatusPage(order: result!.$3!));
       },
       failurePrefix: "订单创建失败",
-      successCondition: (result) => result?.$2 == null,
     );
   }
 }

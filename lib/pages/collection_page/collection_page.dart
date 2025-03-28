@@ -290,8 +290,6 @@ class _CollectionPageState extends State<CollectionPage>
       context: context,
       futureCall: _collectionViewModel.unCollect(collection),
       successMessage: "取消收藏成功",
-      failurePrefix: "取消收藏失败",
-      successCondition: (result) => result ?? false,
     );
   }
 }

@@ -6,8 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:rubbish_detection/repository/data/record_response_data.dart';
 
 class RecordViewModel with ChangeNotifier {
-
-  Future<RecordResponse?> getResponse(String payload) async {
+  Future<(int?, String?, RecordResponse?)> getResponse(String payload) async {
     const secretId = 'AKID76rNfiYAZkmfKo5B4i7II4cw61jDXhcJ';
     const secretKey = 'YszsZ2HI4HQPDB869788zyoUw97wa4NY';
 
@@ -82,6 +81,6 @@ $hashedCanonicalRequest''';
 
     final model = RecordResponseDataModel.fromJson(res.data);
 
-    return model.response;
+    return (res.statusCode, res.statusMessage, model.response);
   }
 }

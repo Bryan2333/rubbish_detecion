@@ -25,10 +25,10 @@ class CollectionViewModel with ChangeNotifier {
         hasMore = true;
       }
 
-      final list = await Api.instance
+      final result = await Api.instance
           .getCollectionByPage(userId, currentPage, defaultPageSize);
 
-      collections.addAll(list ?? []);
+      collections.addAll(result?.$3 ?? []);
     } catch (e) {
       log("Error fetching collected records: $e");
     } finally {
@@ -37,17 +37,17 @@ class CollectionViewModel with ChangeNotifier {
     }
   }
 
-  Future<bool> unCollect(RecognitionCollectionBean collection) async {
+  Future<(int?, String?, Object?)> unCollect(
+      RecognitionCollectionBean collection) async {
     try {
-      final statusCode = await Api.instance
+      final result = await Api.instance
           .unCollectRecognition(collection.id!, collection.userId!);
 
-      if (statusCode == 1000) {
+      if (result.$1 == 1000) {
         collections.removeWhere((test) => test.id == collection.id);
-        return true;
       }
 
-      return false;
+      return result;
     } finally {
       notifyListeners();
     }

@@ -391,7 +391,6 @@ class _PersonalPageState extends State<PersonalPage> {
       futureCall: Provider.of<AuthViewModel>(context, listen: false).logout(role),
       onSuccess: (_) => RouteHelper.pushAndRemoveUntil(
           context, const TabPage(), (_) => false),
-      successCondition: (result) => result == 1000,
       successMessage: "退出登录成功",
       failurePrefix: "退出登录失败",
     );

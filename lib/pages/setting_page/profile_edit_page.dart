@@ -52,7 +52,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   Future<void> _saveProfile() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    await CustomHelper.executeAsyncCall(
+    await CustomHelper.executeAsyncCall<UserBean>(
       context: context,
       futureCall: Api.instance.changeUserInfo(
           widget.user.id!,
@@ -66,9 +66,8 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       successMessage: "用户信息更新成功",
       failurePrefix: "用户信息更新失败",
       onSuccess: (result) async {
-        await DbHelper.instance.updateUser((result?.$1)!);
+        await DbHelper.instance.updateUser(result!.$3!);
       },
-      successCondition: (result) => result?.$2 == null,
     );
   }
 
