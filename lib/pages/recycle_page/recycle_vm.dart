@@ -72,20 +72,13 @@ class RecycleViewModel with ChangeNotifier {
       notifyListeners();
 
       List<OrderBean>? fetchedOrders;
-      if (orderStatus == null) {
-        fetchedOrders = await Api.instance.getOrderByPage(
-          userId,
-          pageNum: pageNum,
-          pageSize: pageSize,
-        );
-      } else {
-        fetchedOrders = await Api.instance.getOrderByStatusWithPage(
-          userId,
-          orderStatus,
-          pageNum: pageNum,
-          pageSize: pageSize,
-        );
-      }
+
+      fetchedOrders = await Api.instance.getOrderByPage(
+        userId,
+        orderStatus: orderStatus,
+        pageNum: pageNum,
+        pageSize: pageSize,
+      );
       fetchedOrders ??= [];
 
       fetchedOrders.forEach(_fixOrderData);

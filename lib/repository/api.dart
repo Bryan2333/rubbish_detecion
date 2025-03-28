@@ -351,6 +351,7 @@ class Api {
 
   Future<List<OrderBean>?> getOrderByPage(
     int userId, {
+    int? orderStatus,
     int pageNum = 1,
     int pageSize = 10,
   }) async {
@@ -360,34 +361,7 @@ class Api {
         "userId": userId,
         "pageNum": pageNum,
         "pageSize": pageSize,
-      },
-    );
-
-    if (response.data is! List) {
-      return null;
-    }
-
-    final orderJsonList = response.data as List;
-    final orders = orderJsonList
-        .map((json) => OrderBean.fromJson(json as Map<String, dynamic>))
-        .toList();
-
-    return orders;
-  }
-
-  Future<List<OrderBean>?> getOrderByStatusWithPage(
-    int userId,
-    int orderStatus, {
-    int pageNum = 1,
-    int pageSize = 10,
-  }) async {
-    final response = await DioInstance.instance.get(
-      "/api/order/findByStatus",
-      params: {
-        "userId": userId,
         "orderStatus": orderStatus,
-        "pageNum": pageNum,
-        "pageSize": pageSize,
       },
     );
 
