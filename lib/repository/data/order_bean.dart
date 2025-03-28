@@ -10,6 +10,8 @@ class OrderBean {
   int? orderStatus; // 0 - 未完成，1 - 处理中, 2 - 已完成, 3 - 已取消
   double? estimatedPrice;
   double? actualPrice;
+  int? reviewRate;
+  String? reviewMessage;
   String? createdAt;
   String? updatedAt;
 
@@ -22,6 +24,8 @@ class OrderBean {
       this.orderStatus,
       this.estimatedPrice,
       this.actualPrice,
+      this.reviewRate,
+      this.reviewMessage,
       this.createdAt,
       this.updatedAt});
 
@@ -37,6 +41,8 @@ class OrderBean {
     orderStatus = json['orderStatus'];
     estimatedPrice = json['estimatedPrice'];
     actualPrice = json['actualPrice'];
+    reviewRate = json['reviewRate'];
+    reviewMessage = json['reviewMessage'];
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
   }
@@ -55,6 +61,8 @@ class OrderBean {
     data['orderStatus'] = orderStatus;
     data['estimatedPrice'] = estimatedPrice;
     data['actualPrice'] = actualPrice;
+    data['reviewRate'] = reviewRate;
+    data['reviewMessage'] = reviewMessage;
     data['createdAt'] = createdAt;
     data['updatedAt'] = updatedAt;
     return data;

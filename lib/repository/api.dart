@@ -377,4 +377,31 @@ class Api {
 
     return (response.statusCode, response.statusMessage, orders);
   }
+
+  Future<(int?, String?, Object?)> cancelOrder(int userId, int orderId) async {
+    final response = await DioInstance.instance.post(
+      "/api/order/cancel",
+      queryParameters: {"userId": userId, "orderId": orderId},
+    );
+
+    return (response.statusCode, response.statusMessage, response.data);
+  }
+
+  Future<(int?, String?, Object?)> submitOrderReview(
+      {required int userId,
+      required int orderId,
+      required int reviewRate,
+      required String reviewMessage}) async {
+    final response = await DioInstance.instance.post(
+      "/api/order/addReview",
+      queryParameters: {
+        "userId": userId,
+        "orderId": orderId,
+        "reviewRate": reviewRate,
+        "reviewMessage": reviewMessage
+      },
+    );
+
+    return (response.statusCode, response.statusMessage, response.data);
+  }
 }

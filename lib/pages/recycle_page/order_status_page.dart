@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
 import 'package:rubbish_detection/pages/recycle_page/address_card.dart';
+import 'package:rubbish_detection/pages/recycle_page/recycle_vm.dart';
 import 'package:rubbish_detection/pages/recycle_page/waste_card.dart';
 import 'package:rubbish_detection/repository/data/order_bean.dart';
+import 'package:rubbish_detection/utils/custom_helper.dart';
 
 class OrderStatusPage extends StatefulWidget {
   const OrderStatusPage({
@@ -77,6 +80,7 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
           ),
         ),
       ),
+      bottomNavigationBar: _buildBottomBar(),
     );
   }
 
@@ -169,6 +173,17 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
               value: widget.order.actualPrice == null
                   ? "未知"
                   : "${widget.order.actualPrice?.toStringAsFixed(2)} 元"),
+          _buildDivider(),
+          _buildInfoRow(
+              label: "评价分数",
+              value: widget.order.reviewRate == null
+                  ? "无"
+                  : "${widget.order.reviewRate}分"),
+          _buildDivider(),
+          _buildInfoRow(
+            label: "评价留言",
+            value: widget.order.reviewMessage ?? "无",
+          ),
         ],
       ),
     );
@@ -203,7 +218,269 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
     );
   }
 
+  Widget _buildBottomBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey[200]!,
+            blurRadius: 2.r,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: Container(
+        padding: EdgeInsets.all(16.r),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: _cancelOrder,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25.r),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                "取消订单",
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
+              ),
+            ),
+            const Spacer(),
+            ElevatedButton(
+              onPressed: _reviewOrder,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00CE68),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25.r),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                "评价订单",
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildDivider() {
     return Divider(height: 1.h, color: Colors.grey[200]);
+  }
+
+  void _cancelOrder() async {
+    if (widget.order.orderStatus == 2) {
+      CustomHelper.showSnackBar(context, "订单已完成，无法取消", success: false);
+      return;
+    }
+
+    if (widget.order.orderStatus == 1) {
+      CustomHelper.showSnackBar(context, "订单处理中，无法取消", success: false);
+      return;
+    }
+
+    if (widget.order.orderStatus == 3) {
+      CustomHelper.showSnackBar(context, "订单已取消", success: false);
+      return;
+    }
+
+    final shouldCancel = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text("确认取消订单"),
+        content: const Text("您确定要取消此订单吗？"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text("取消"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text("确认"),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldCancel != true) {
+      return;
+    }
+
+    if (!mounted) return;
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: Provider.of<RecycleViewModel>(context, listen: false)
+          .cancelOrder(
+              userId: widget.order.userId ?? -1,
+              orderId: widget.order.id ?? -1),
+      successMessage: "订单取消成功",
+      onSuccess: (result) {
+        setState(() {
+          widget.order.orderStatus = 3;
+        });
+      },
+      failurePrefix: "订单取消失败",
+    );
+  }
+
+  void _reviewOrder() async {
+    if (widget.order.orderStatus != 2) {
+      CustomHelper.showSnackBar(context, "订单未完成，无法评价", success: false);
+      return;
+    }
+
+    if (widget.order.reviewRate != null) {
+      CustomHelper.showSnackBar(context, "订单已评价", defaultStyle: true);
+      return;
+    }
+
+    int reviewRate = 0;
+    String reviewMessage = "";
+    final formKey = GlobalKey<FormState>();
+    final shouldSubmit = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFFF7F7F7),
+          title: Text(
+            "评价订单",
+            style: TextStyle(color: const Color(0xFF00CE68), fontSize: 20.sp),
+          ),
+          content: Form(
+            key: formKey,
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        return IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: Icon(
+                            index < reviewRate ? Icons.star : Icons.star_border,
+                            color: index < reviewRate
+                                ? const Color(0xFFFFC107)
+                                : Colors.grey,
+                            size: 32.r,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              reviewRate = index + 1;
+                            });
+                          },
+                        );
+                      }),
+                    ),
+                    SizedBox(height: 16.h),
+                    // Review message input with validator
+                    TextFormField(
+                      decoration: InputDecoration(
+                        labelText: "留言",
+                        labelStyle: TextStyle(
+                            color: const Color(0xFF00CE68), fontSize: 16.sp),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide:
+                              const BorderSide(color: Color(0xFF00CE68)),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: Colors.red),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: Colors.red),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                            borderSide:
+                                const BorderSide(color: Color(0xFF00CE68)),
+                            borderRadius: BorderRadius.circular(8.r)),
+                      ),
+                      onChanged: (value) {
+                        reviewMessage = value;
+                      },
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return "留言至少需要一个字符";
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                "取消",
+                style: TextStyle(color: Colors.grey, fontSize: 16.sp),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  if (reviewRate == 0) {
+                    // Although rating is initialized to 5, extra check if needed
+                    CustomHelper.showSnackBar(
+                      context,
+                      "评分不能为0分",
+                      success: false,
+                    );
+                    return;
+                  }
+                  Navigator.of(context).pop(true);
+                }
+              },
+              child: Text(
+                "提交",
+                style:
+                    TextStyle(color: const Color(0xFF00CE68), fontSize: 16.sp),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldSubmit != true) {
+      return;
+    }
+
+    if (!mounted) return;
+    await CustomHelper.executeAsyncCall(
+      context: context,
+      futureCall: Provider.of<RecycleViewModel>(context, listen: false)
+          .submitReview(
+              userId: widget.order.userId ?? -1,
+              orderId: widget.order.id ?? -1,
+              reviewRate: reviewRate,
+              reviewMessage: reviewMessage),
+      successMessage: "订单评价成功",
+      onSuccess: (result) {
+        setState(() {
+          widget.order.reviewRate = reviewRate;
+          widget.order.reviewMessage = reviewMessage;
+        });
+      },
+      failurePrefix: "订单评价失败",
+    );
   }
 }

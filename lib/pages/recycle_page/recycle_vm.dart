@@ -126,6 +126,23 @@ class RecycleViewModel with ChangeNotifier {
     }
   }
 
+  Future<(int?, String?, Object?)> cancelOrder(
+      {required int userId, required int orderId}) async {
+    return await Api.instance.cancelOrder(userId, orderId);
+  }
+
+  Future<(int?, String?, Object?)> submitReview(
+      {required int userId,
+      required int orderId,
+      required int reviewRate,
+      required String reviewMessage}) async {
+    return await Api.instance.submitOrderReview(
+        userId: userId,
+        orderId: orderId,
+        reviewRate: reviewRate,
+        reviewMessage: reviewMessage);
+  }
+
   void _fixOrderData(OrderBean order) {
     final dateFormatter = DateFormat("yyyy年MM月dd日 HH:mm");
     order.waste?.photos = order.waste?.photos?.map((photo) {
