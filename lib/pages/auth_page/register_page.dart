@@ -639,7 +639,7 @@ class _RegisterPageState extends State<RegisterPage> {
       context: context,
       futureCall:
           Api.instance.getRegisterVerifyCode(_emailController.text.trim()),
-      onSuccess: (_) => _startCountdown,
+      onSuccess: (_) => _startCountdown(),
       successMessage: "验证码发送成功，请检查您的邮箱",
       failurePrefix: "获取验证码失败",
     );
