@@ -31,8 +31,10 @@ class UserBean {
     signature = json['signature'];
     avatar = json['avatar'];
     participationCount = json['participationCount'];
-    totalRecycleAmount = json['totalRecycleAmount'];
     role = json['role'];
+    if (json['totalRecycleAmount'] is num) {
+      totalRecycleAmount = json['totalRecycleAmount'].toDouble();
+    } 
   }
 
   Map<String, dynamic> toJson() {
