@@ -154,4 +154,11 @@ class RecycleViewModel with ChangeNotifier {
     order.orderDate =
         dateFormatter.format(DateTime.parse(order.orderDate ?? ""));
   }
+
+  void clearCache() {
+    _ordersCache.clear();
+    _pageTracker.clear();
+    _hasMore.clear();
+    currentOrders.clear();
+  }
 }

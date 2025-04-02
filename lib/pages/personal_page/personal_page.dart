@@ -384,13 +384,14 @@ class _PersonalPageState extends State<PersonalPage> {
   }
 
   Future<void> _handleLogout() async {
-    final role = _personalViewModel.user?.role ?? "0"; 
-
     await CustomHelper.executeAsyncCall(
       context: context,
-      futureCall: Provider.of<AuthViewModel>(context, listen: false).logout(role),
-      onSuccess: (_) => RouteHelper.pushAndRemoveUntil(
-          context, const TabPage(), (_) => false),
+      futureCall:
+          Provider.of<AuthViewModel>(context, listen: false).logout("0"),
+      onSuccess: (_) {
+        RouteHelper.pushAndRemoveUntil(context, const TabPage(), (_) => false);
+        Provider.of<RecycleViewModel>(context, listen: false).clearCache();
+      },
       successMessage: "退出登录成功",
       failurePrefix: "退出登录失败",
     );
