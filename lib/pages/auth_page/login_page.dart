@@ -97,9 +97,6 @@ class _LoginPageState extends State<LoginPage> {
                   // 密码输入框
                   _buildPasswordField(),
                   SizedBox(height: 20.h),
-                  // 用户身份栏
-                  _buildRoleField(),
-                  SizedBox(height: 16.h),
                   _buildForgotPasswordButton(),
                   SizedBox(height: 20.h),
                   // 登录按钮
@@ -209,61 +206,6 @@ class _LoginPageState extends State<LoginPage> {
                   !_isPasswordVisibleNotifier.value;
             },
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildRoleField() {
-    return ValueListenableBuilder(
-      valueListenable: _selectedRoleNotifier,
-      builder: (context, selectedRole, child) {
-        return DropdownButtonFormField(
-          value: selectedRole,
-          decoration: InputDecoration(
-            labelText: "身份",
-            prefixIcon: Icon(
-              Icons.person_outline,
-              color: const Color(0xFF04C264),
-              size: 22.r,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(
-                color: Colors.grey[300]!,
-                width: 1.w,
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(
-                color: Colors.grey[300]!,
-                width: 1.w,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(
-                color: const Color(0xFF04C264),
-                width: 1.w,
-              ),
-            ),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 16.w,
-              vertical: 16.h,
-            ),
-          ),
-          items: roleList.map((item) {
-            return DropdownMenuItem(
-              value: item['value'],
-              child: Text(item['label']!),
-            );
-          }).toList(),
-          onChanged: (newValue) {
-            if (newValue != null) {
-              _selectedRoleNotifier.value = newValue;
-            }
-          },
         );
       },
     );
