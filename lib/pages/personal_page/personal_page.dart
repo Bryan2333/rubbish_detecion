@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:rubbish_detection/pages/recycle_page/recycle_vm.dart';
+import 'package:rubbish_detection/utils/event_bus_helper.dart';
 import 'package:rubbish_detection/pages/auth_page/auth_vm.dart';
 import 'package:rubbish_detection/pages/auth_page/login_page.dart';
 import 'package:rubbish_detection/pages/personal_page/personal_vm.dart';
@@ -23,10 +26,23 @@ class PersonalPage extends StatefulWidget {
 class _PersonalPageState extends State<PersonalPage> {
   final _personalViewModel = PersonalViewModel();
 
+  late StreamSubscription<UserInfoUpdateEvent> _eventBusSubscription;
+
   @override
   void initState() {
     super.initState();
     _initUserData();
+
+    _eventBusSubscription =
+        EventBusHelper.eventBus.on<UserInfoUpdateEvent>().listen((_) {
+      _initUserData();
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _eventBusSubscription.cancel();
   }
 
   Future<void> _initUserData() async {
