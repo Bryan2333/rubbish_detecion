@@ -659,7 +659,7 @@ class _RegisterPageState extends State<RegisterPage> {
         _selectedGenderNotifier.value.trim(),
         _signatureController.text.trim(),
         _avatarImageNotifier.value != null
-            ? base64Encode(_avatarImageNotifier.value!.readAsBytesSync())
+            ? "data:image/jpeg;base64,${base64Encode(_avatarImageNotifier.value!.readAsBytesSync())}"
             : null,
       ),
       onSuccess: (_) async {

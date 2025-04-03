@@ -61,7 +61,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
           _selectedGender.value,
           _signatureController.text.trim(),
           _avatarImage.value != null
-              ? base64Encode(_avatarImage.value!.readAsBytesSync())
+              ? "data:image/jpeg;base64,${base64Encode(_avatarImage.value!.readAsBytesSync())}"
               : null),
       successMessage: "用户信息更新成功",
       failurePrefix: "用户信息更新失败",

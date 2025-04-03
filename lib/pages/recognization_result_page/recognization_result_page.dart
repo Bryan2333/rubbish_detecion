@@ -78,7 +78,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
         rubbish.type!,
         DateTime.now().toIso8601String(),
         widget.imagePath?.isNotEmpty ?? false
-            ? base64Encode(File(widget.imagePath!).readAsBytesSync())
+            ? "data:image/jpeg;base64,${base64Encode(File(widget.imagePath!).readAsBytesSync())}"
             : null,
       ),
       successMessage: "添加成功",
