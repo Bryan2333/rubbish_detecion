@@ -6,19 +6,20 @@ import 'package:image/image.dart' as image_lib;
 import 'package:tflite_flutter/tflite_flutter.dart';
 
 class ImageClassificationHelper {
-  static const modelPath = 'assets/model/mobilenet_quant.tflite';
-  static const labelsEnPath = 'assets/model/labels.txt';
-  static const labelsZhPath = 'assets/model/labels-zh.txt';
+  final _modelPath = 'assets/model/mobilenet_quant.tflite';
+  final _labelsEnPath = 'assets/model/labels.txt';
+  final _labelsZhPath = 'assets/model/labels-zh.txt';
 
-  late final Interpreter interpreter;
+  late final Interpreter _interpreter;
   late final List<String> labelsEn;
-  late final List<String> labensZh;
-  late final Tensor inputTensor;
-  late final Tensor outputTensor;
+  late final List<String> labelsZh;
 
-  ImageClassificationHelper() {
-    initHelper();
-  }
+  bool _isInitialized = false;
+
+  ImageClassificationHelper._();
+
+  static final ImageClassificationHelper instance =
+      ImageClassificationHelper._();
 
   // Load model
   Future<void> _loadModel() async {
@@ -35,32 +36,33 @@ class ImageClassificationHelper {
     }
 
     // Load model from assets
-    interpreter = await Interpreter.fromAsset(modelPath, options: options);
-    // Get tensor input shape [1, 224, 224, 3]
-    inputTensor = interpreter.getInputTensors().first;
-    // Get tensor output shape [1, 1001]
-    outputTensor = interpreter.getOutputTensors().first;
+    _interpreter = await Interpreter.fromAsset(_modelPath, options: options);
 
     log('Interpreter loaded successfully');
   }
 
   // Load labels from assets
   Future<void> _loadLabels() async {
-    final labelEnTxt = await rootBundle.loadString(labelsEnPath);
+    final labelEnTxt = await rootBundle.loadString(_labelsEnPath);
     labelsEn = labelEnTxt.split('\n');
 
-    final labelZhTxt = await rootBundle.loadString(labelsZhPath);
-    labensZh = labelZhTxt.split('\n');
+    final labelZhTxt = await rootBundle.loadString(_labelsZhPath);
+    labelsZh = labelZhTxt.split('\n');
   }
 
   // Initialize helper
-  Future<void> initHelper() async {
+  Future<void> _initHelper() async {
     await _loadLabels();
     await _loadModel();
+    _isInitialized = true;
   }
 
   // Process static image and perform inference
   Future<Map<String, double>> inferenceImage(image_lib.Image image) async {
+    if (_isInitialized == false) {
+      await _initHelper();
+    }
+
     // Resize image to match model input shape (224x224)
     final imageInput = image_lib.copyResize(image, width: 224, height: 224);
 
@@ -83,7 +85,7 @@ class ImageClassificationHelper {
     final output = [List<int>.filled(1001, 0)];
 
     // Run inference
-    interpreter.run(input, output);
+    _interpreter.run(input, output);
 
     // Get first output tensor (classification result)
     final result = output.first;
