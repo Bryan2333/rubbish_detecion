@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +7,7 @@ import 'package:rubbish_detection/pages/recycle_page/recycle_vm.dart';
 import 'package:rubbish_detection/pages/recycle_page/waste_card.dart';
 import 'package:rubbish_detection/repository/data/order_bean.dart';
 import 'package:rubbish_detection/utils/custom_helper.dart';
+import 'package:rubbish_detection/utils/event_bus_helper.dart';
 
 class OrderStatusPage extends StatefulWidget {
   const OrderStatusPage({
@@ -20,6 +22,8 @@ class OrderStatusPage extends StatefulWidget {
 }
 
 class _OrderStatusPageState extends State<OrderStatusPage> {
+  late StreamSubscription<OrderInfoUpdateEvent> _eventBusSubscription;
+
   String _getStatusText(int? status) {
     return switch (status) {
       0 => "待处理",
@@ -46,6 +50,23 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
       2 => const Color(0xFFE3F2FD),
       _ => Colors.grey[100]!
     };
+  }
+
+  @override
+  void initState() {
+    _eventBusSubscription =
+        EventBusHelper.eventBus.on<OrderInfoUpdateEvent>().listen((event) {
+      setState(() {
+        widget.order.copyWith(event.order!);
+      });
+    });
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _eventBusSubscription.cancel();
+    super.dispose();
   }
 
   @override

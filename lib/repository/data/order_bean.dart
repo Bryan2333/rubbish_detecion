@@ -39,8 +39,12 @@ class OrderBean {
         : null;
     orderDate = json['orderDate'];
     orderStatus = json['orderStatus'];
-    estimatedPrice = json['estimatedPrice'];
-    actualPrice = json['actualPrice'];
+    if (json['estimatedPrice'] is num) {
+      estimatedPrice = json['estimatedPrice'].toDouble();
+    }
+    if (json['actualPrice'] is num) {
+      actualPrice = json['actualPrice'].toDouble();
+    }
     reviewRate = json['reviewRate'];
     reviewMessage = json['reviewMessage'];
     createdAt = json['createdAt'];
@@ -66,5 +70,24 @@ class OrderBean {
     data['createdAt'] = createdAt;
     data['updatedAt'] = updatedAt;
     return data;
+  }
+
+  void copyWith(OrderBean order) {
+    id = order.id;
+    userId = order.userId;
+    waste = order.waste;
+    address = order.address;
+    orderDate = order.orderDate;
+    orderStatus = order.orderStatus;
+    if (order.estimatedPrice is num) {
+      estimatedPrice = order.estimatedPrice?.toDouble();
+    }
+    if (order.actualPrice is num) {
+      actualPrice = order.actualPrice?.toDouble();
+    }
+    reviewRate = order.reviewRate;
+    reviewMessage = order.reviewMessage;
+    createdAt = order.createdAt;
+    updatedAt = order.updatedAt;
   }
 }

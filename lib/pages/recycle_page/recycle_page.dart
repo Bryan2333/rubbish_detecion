@@ -33,8 +33,10 @@ class _RecyclingPageState extends State<RecyclingPage> {
         await Provider.of<AuthViewModel>(context, listen: false).getUserId();
 
     if (!mounted) return;
-    Provider.of<RecycleViewModel>(context, listen: false)
-        .getRecentOrders(userId, forceRefresh: forceRefresh);
+    final vm = Provider.of<RecycleViewModel>(context, listen: false);
+
+    await vm.getRecentOrders(userId, forceRefresh: forceRefresh);
+    vm.stompSync();
   }
 
   final _wasteTypeMap = {
@@ -54,16 +56,6 @@ class _RecyclingPageState extends State<RecyclingPage> {
             if (vm.isLoading) {
               return CustomHelper.progressIndicator;
             } else {
-              final pendingOrders = vm.currentOrders
-                  .where((order) => order.orderStatus == 0)
-                  .toList();
-              final processingOrders = vm.currentOrders
-                  .where((order) => order.orderStatus == 1)
-                  .toList();
-              final completedOrders = vm.currentOrders
-                  .where((order) => order.orderStatus == 2)
-                  .toList();
-
               return SmartRefresher(
                 controller: _refreshController,
                 enablePullDown: true,
@@ -84,7 +76,7 @@ class _RecyclingPageState extends State<RecyclingPage> {
                         _buildGroupCard(
                           title: "待处理订单",
                           icon: Icons.pending_actions_outlined,
-                          orders: pendingOrders,
+                          orders: vm.recentByStatus(0),
                           orderStatus: 0,
                         ),
                         SizedBox(height: 24.h),
@@ -92,7 +84,7 @@ class _RecyclingPageState extends State<RecyclingPage> {
                         _buildGroupCard(
                           title: "服务中订单",
                           icon: Icons.recycling_outlined,
-                          orders: processingOrders,
+                          orders: vm.recentByStatus(1),
                           orderStatus: 1,
                         ),
                         SizedBox(height: 24.h),
@@ -100,7 +92,7 @@ class _RecyclingPageState extends State<RecyclingPage> {
                         _buildGroupCard(
                           title: "已完成订单",
                           icon: Icons.check_circle_outline,
-                          orders: completedOrders,
+                          orders: vm.recentByStatus(2),
                           orderStatus: 2,
                         ),
                         SizedBox(height: 24.h),
@@ -108,7 +100,7 @@ class _RecyclingPageState extends State<RecyclingPage> {
                         _buildGroupCard(
                           title: "全部订单",
                           icon: Icons.list_alt,
-                          orders: vm.currentOrders,
+                          orders: vm.recentByStatus(null),
                         ),
                         SizedBox(height: 10.h),
                       ],

@@ -74,6 +74,7 @@ class _OrderListPageState extends State<OrderListPage> {
       appBar: _buildAppBar(),
       body: Consumer<RecycleViewModel>(
         builder: (context, vm, child) {
+          final orders = vm.ordersByStatus(widget.orderStatus);
           return SafeArea(
             child: SmartRefresher(
               controller: _refreshController,
@@ -85,7 +86,7 @@ class _OrderListPageState extends State<OrderListPage> {
               },
               onLoading: () async {
                 if (!vm.hasMore(widget.orderStatus)) {
-                  CustomHelper.showSnackBar(context, "没有更多数据了");
+                  CustomHelper.showSnackBar(context, "没有更多数据了", defaultStyle: true);
                 } else {
                   await _loadOrRefresh(loadMore: true);
                 }
@@ -97,9 +98,9 @@ class _OrderListPageState extends State<OrderListPage> {
               ),
               child: (vm.isLoading && !vm.hasMore(widget.orderStatus))
                   ? CustomHelper.progressIndicator
-                  : vm.currentOrders.isEmpty
+                  : orders.isEmpty
                       ? _buildEmptyState()
-                      : _buildOrderList(vm.currentOrders),
+                      : _buildOrderList(orders),
             ),
           );
         },
