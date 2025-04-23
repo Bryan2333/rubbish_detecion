@@ -58,6 +58,8 @@ class _OrderStatusPageState extends State<OrderStatusPage> {
         EventBusHelper.eventBus.on<OrderInfoUpdateEvent>().listen((event) {
       setState(() {
         widget.order.copyWith(event.order!);
+
+        CustomHelper.showSnackBar(context, "订单状态已更新", defaultStyle: true);
       });
     });
     super.initState();

@@ -203,60 +203,42 @@ class RecycleViewModel with ChangeNotifier {
         final message = frame.body;
         if (message == null) return;
 
+        final allRecentKey = _cacheKey(null, isRecent: true);
+
         // 解析更新后的订单，并格式化订单数据
         final updatedOrder = OrderBean.fromJson(jsonDecode(message));
         _fixOrderData(updatedOrder);
 
-        // 更新普通缓存（非近期缓存）
-        // 普通缓存的 key 生成规则：isRecent 为 false，
-        // 即：orderStatus 为 null 时 key 为 200，否则 key 就是 orderStatus 本身。
-        _ordersCache.forEach((key, orderSet) {
-          // 跳过近期缓存（key 为 100 或 >= 1000的缓存）
-          if (key == 100 || key >= 1000) return;
+        OrderBean? oldBean;
+        int? oldStatus;
 
-          final existingOrder =
-              orderSet.firstWhereOrNull((order) => order.id == updatedOrder.id);
-          if (existingOrder != null) {
-            // 如果订单状态发生变化，则从该缓存中移除
-            if (existingOrder.orderStatus != updatedOrder.orderStatus) {
-              orderSet.remove(existingOrder);
-            } else {
-              // 否则直接使用 copyWith 方法更新订单信息
-              existingOrder.copyWith(updatedOrder);
+        _ordersCache.forEach((key, orders) {
+          for (final o in orders) {
+            if (o.id == updatedOrder.id) {
+              oldBean = o;
+              oldStatus = o.orderStatus;
+              return;
             }
           }
         });
 
-        // 更新近期缓存
-        // 首先更新“全部近期”缓存，其 key 为 100
-        final allRecentKey = _cacheKey(null, isRecent: true);
-        final allRecentSet = _ordersCache[allRecentKey];
-        if (allRecentSet != null) {
-          final existingRecent = allRecentSet
-              .firstWhereOrNull((order) => order.id == updatedOrder.id);
-          if (existingRecent != null) {
-            // 更新“全部近期”缓存中的订单信息
-            existingRecent.copyWith(updatedOrder);
+        final newStatus = updatedOrder.orderStatus;
 
-            // 如果订单状态发生变化，则需要在近期缓存中从旧状态移除并添加到新状态的近期缓存
-            final newRecentKey =
-                _cacheKey(updatedOrder.orderStatus, isRecent: true);
-            // 假设订单状态值范围在 0、1、2、3，这里列出所有近期状态的 key（1000, 1001, 1002, 1003）
-            final recentStateKeys = [
-              for (var st in [0, 1, 2, 3]) 1000 + st
-            ];
-            for (var key in recentStateKeys) {
-              if (key != newRecentKey) {
-                _ordersCache[key]
-                    ?.removeWhere((order) => order.id == updatedOrder.id);
-              }
-            }
-            // 添加到新的状态近期缓存中（如果不存在则先初始化）
-            _ordersCache[newRecentKey] ??= <OrderBean>[];
-            // 比较日期，在插入 eg 2025年04月17日 23:27
-            // 时，确保新插入的订单在列表的最前面
+        // 订单状态发生改变
+        if (oldBean != null && oldStatus != newStatus) {
+          final oldPageKey = _cacheKey(oldStatus, isRecent: false);
+          final oldRecentKey = _cacheKey(oldStatus, isRecent: true);
+
+          _ordersCache[oldPageKey]?.removeWhere((o) => o.id == updatedOrder.id);
+          _ordersCache[oldRecentKey]
+              ?.removeWhere((o) => o.id == updatedOrder.id);
+
+          if (_ordersCache[allRecentKey]?.any((o) => o.id == updatedOrder.id) ==
+              true) {
+            final newRecentKey = _cacheKey(newStatus, isRecent: true);
+            _ordersCache[newRecentKey] ??= [];
+
             final dateFormatter = DateFormat("yyyy年MM月dd日 HH:mm");
-
             final index = _ordersCache[newRecentKey]!.indexWhere((order) {
               final orderDate = dateFormatter.parse(order.orderDate ?? "");
               final newOrderDate =
@@ -271,6 +253,38 @@ class RecycleViewModel with ChangeNotifier {
               _ordersCache[newRecentKey]!
                   .insert(index, updatedOrder); // 插入到指定位置
             }
+
+            if (_ordersCache[allRecentKey]
+                    ?.any((o) => o.id == updatedOrder.id) ==
+                true) {
+              _ordersCache[allRecentKey]!
+                  .firstWhereOrNull((o) => o.id == updatedOrder.id)
+                  ?.copyWith(updatedOrder);
+            }
+          }
+        } else if (oldBean != null) { // 订单状态未改变
+          final pageKey = _cacheKey(oldStatus, isRecent: false);
+          final recentKey = _cacheKey(oldStatus, isRecent: true);
+
+          if (_ordersCache[pageKey]?.any((o) => o.id == updatedOrder.id) ==
+              true) {
+            _ordersCache[pageKey]!
+                .firstWhereOrNull((o) => o.id == updatedOrder.id)
+                ?.copyWith(updatedOrder);
+          }
+
+          if (_ordersCache[recentKey]?.any((o) => o.id == updatedOrder.id) ==
+              true) {
+            _ordersCache[recentKey]!
+                .firstWhereOrNull((o) => o.id == updatedOrder.id)
+                ?.copyWith(updatedOrder);
+          }
+
+          if (_ordersCache[allRecentKey]?.any((o) => o.id == updatedOrder.id) ==
+              true) {
+            _ordersCache[allRecentKey]!
+                .firstWhereOrNull((o) => o.id == updatedOrder.id)
+                ?.copyWith(updatedOrder);
           }
         }
 

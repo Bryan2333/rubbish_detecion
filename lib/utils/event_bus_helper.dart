@@ -8,7 +8,7 @@ class EventBusHelper {
 class UserInfoUpdateEvent {}
 
 class OrderInfoUpdateEvent {
-  OrderBean? order;
+  final OrderBean? order;
 
   OrderInfoUpdateEvent(this.order);
 }
