@@ -41,6 +41,10 @@ android {
     aaptOptions {
         noCompress 'tflite'
     }
+
+    dependencies {
+        implementation "org.tensorflow:tensorflow-lite-gpu-api:+"
+    }
 }
 
 flutter {
