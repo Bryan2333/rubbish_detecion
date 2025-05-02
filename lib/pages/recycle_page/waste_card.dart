@@ -395,7 +395,8 @@ class _WasteCardState extends State<WasteCard>
             if (!widget.isReadOnly && photosToDisplay.length < 3)
               GestureDetector(
                 onTap: () async {
-                  final image = await ImageHelper.uploadImage(context);
+                  final image =
+                      await ImageHelper.uploadImage(context, imageQuality: 85);
 
                   if (image == null) return;
 
