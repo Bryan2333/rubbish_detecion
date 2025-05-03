@@ -236,7 +236,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
         File(path),
         width: 180.w,
         height: 140.h,
-        fit: BoxFit.contain,
+        fit: BoxFit.cover,
       );
     }
   }
