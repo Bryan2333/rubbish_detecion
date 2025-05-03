@@ -140,7 +140,7 @@ class _RecognizationResultPageState extends State<RecognizationResultPage>
           ),
           SizedBox(height: 16.h),
           Text(
-            "识别失败，请重试。",
+            "数据库暂未收录该垃圾", 
             style: TextStyle(
               fontSize: 18.sp,
               color: Colors.black54,
